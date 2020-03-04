@@ -38,14 +38,20 @@ namespace scudo {
 // Memory used by this allocator is never unmapped but can be partially
 // reclaimed if the platform allows for it.
 
-template <class SizeClassMapT, uptr RegionSizeLog> class SizeClassAllocator32 {
+template <class SizeClassMapT, uptr RegionSizeLog,
+          s32 MinReleaseToOsIntervalMs = INT32_MIN,
+          s32 MaxReleaseToOsIntervalMs = INT32_MAX>
+class SizeClassAllocator32 {
 public:
   typedef SizeClassMapT SizeClassMap;
   // The bytemap can only track UINT8_MAX - 1 classes.
   static_assert(SizeClassMap::LargestClassId <= (UINT8_MAX - 1), "");
   // Regions should be large enough to hold the largest Block.
   static_assert((1UL << RegionSizeLog) >= SizeClassMap::MaxSize, "");
-  typedef SizeClassAllocator32<SizeClassMapT, RegionSizeLog> ThisT;
+  typedef SizeClassAllocator32<SizeClassMapT, RegionSizeLog,
+                               MinReleaseToOsIntervalMs,
+                               MaxReleaseToOsIntervalMs>
+      ThisT;
   typedef SizeClassAllocatorLocalCache<ThisT> CacheT;
   typedef typename CacheT::TransferBatch TransferBatch;
   static const bool SupportsMemoryTagging = false;
@@ -78,7 +84,7 @@ public:
       Sci->CanRelease = (I != SizeClassMap::BatchClassId) &&
                         (getSizeByClassId(I) >= (PageSize / 32));
     }
-    ReleaseToOsIntervalMs = ReleaseToOsInterval;
+    setReleaseToOsIntervalMs(ReleaseToOsInterval);
   }
   void init(s32 ReleaseToOsInterval) {
     memset(this, 0, sizeof(*this));
@@ -174,6 +180,15 @@ public:
                 TotalMapped >> 20, PoppedBlocks, PoppedBlocks - PushedBlocks);
     for (uptr I = 0; I < NumClasses; I++)
       getStats(Str, I, 0);
+  }
+
+  void setReleaseToOsIntervalMs(s32 Interval) {
+    if (Interval >= MaxReleaseToOsIntervalMs) {
+      Interval = MaxReleaseToOsIntervalMs;
+    } else if (Interval <= MinReleaseToOsIntervalMs) {
+      Interval = MinReleaseToOsIntervalMs;
+    }
+    atomic_store(&ReleaseToOsIntervalMs, Interval, memory_order_relaxed);
   }
 
   uptr releaseToOS() {
@@ -356,6 +371,10 @@ private:
                 AvailableChunks, Rss >> 10, Sci->ReleaseInfo.RangesReleased);
   }
 
+  s32 getReleaseToOsIntervalMs() {
+    return atomic_load(&ReleaseToOsIntervalMs, memory_order_relaxed);
+  }
+
   NOINLINE uptr releaseToOSMaybe(SizeClassInfo *Sci, uptr ClassId,
                                  bool Force = false) {
     const uptr BlockSize = getSizeByClassId(ClassId);
@@ -367,14 +386,14 @@ private:
         (Sci->Stats.PoppedBlocks - Sci->Stats.PushedBlocks) * BlockSize;
     if (BytesInFreeList < PageSize)
       return 0; // No chance to release anything.
-    if ((Sci->Stats.PushedBlocks - Sci->ReleaseInfo.PushedBlocksAtLastRelease) *
-            BlockSize <
-        PageSize) {
+    const uptr BytesPushed =
+        (Sci->Stats.PushedBlocks - Sci->ReleaseInfo.PushedBlocksAtLastRelease) *
+        BlockSize;
+    if (BytesPushed < PageSize)
       return 0; // Nothing new to release.
-    }
 
     if (!Force) {
-      const s32 IntervalMs = ReleaseToOsIntervalMs;
+      const s32 IntervalMs = getReleaseToOsIntervalMs();
       if (IntervalMs < 0)
         return 0;
       if (Sci->ReleaseInfo.LastReleaseAtNs +
@@ -388,12 +407,13 @@ private:
     // iterate multiple times over the same freelist if a ClassId spans multiple
     // regions. But it will have to do for now.
     uptr TotalReleasedBytes = 0;
+    const uptr Size = (RegionSize / BlockSize) * BlockSize;
     for (uptr I = MinRegionIndex; I <= MaxRegionIndex; I++) {
       if (PossibleRegions[I] - 1U == ClassId) {
         const uptr Region = I * RegionSize;
         ReleaseRecorder Recorder(Region);
-        releaseFreeMemoryToOS(Sci->FreeList, Region, RegionSize / PageSize,
-                              BlockSize, &Recorder);
+        releaseFreeMemoryToOS(Sci->FreeList, Region, Size, BlockSize,
+                              &Recorder);
         if (Recorder.getReleasedRangesCount() > 0) {
           Sci->ReleaseInfo.PushedBlocksAtLastRelease = Sci->Stats.PushedBlocks;
           Sci->ReleaseInfo.RangesReleased += Recorder.getReleasedRangesCount();
@@ -414,7 +434,7 @@ private:
   // through the whole NumRegions.
   uptr MinRegionIndex;
   uptr MaxRegionIndex;
-  s32 ReleaseToOsIntervalMs;
+  atomic_s32 ReleaseToOsIntervalMs;
   // Unless several threads request regions simultaneously from different size
   // classes, the stash rarely contains more than 1 entry.
   static constexpr uptr MaxStashedRegions = 4;
