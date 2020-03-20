@@ -17,6 +17,7 @@
 cc_defaults {
     name: "libscudo_defaults",
     native_coverage: false,
+    ramdisk_available: true,
     recovery_available: true,
     host_supported: true,
     native_bridge_supported: true,
@@ -40,6 +41,11 @@ cc_defaults {
         "-Werror=int-to-pointer-cast",
         "-Werror=type-limits",
         "-Werror",
+
+        // Always force alignment to 16 bytes even on 32 bit.
+        // Android assumes that allocations of multiples of 16 bytes
+        // will be aligned to at least 16 bytes.
+        "-DSCUDO_MIN_ALIGNMENT_LOG=4",
     ],
     cppflags: [
         "-nostdinc++",
@@ -54,6 +60,7 @@ cc_defaults {
         "standalone/flags.cpp",
         "standalone/flags_parser.cpp",
         "standalone/linux.cpp",
+        "standalone/release.cpp",
         "standalone/report.cpp",
         "standalone/string_utils.cpp",
         "standalone/wrappers_c_bionic.cpp"
@@ -86,6 +93,11 @@ cc_defaults {
     header_libs: [
         "bionic_libc_platform_headers",
     ],
+    product_variables: {
+        experimental_mte: {
+            cflags: ["-DANDROID_EXPERIMENTAL_MTE"],
+        },
+    },
 }
 
 cc_library_static {
@@ -133,5 +145,13 @@ cc_test {
         "-Wno-unused-parameter",
         "-fno-emulated-tls",
     ],
+    header_libs: [
+        "bionic_libc_platform_headers",
+    ],
+    product_variables: {
+        experimental_mte: {
+            cflags: ["-DANDROID_EXPERIMENTAL_MTE"],
+        },
+    },
     test_suites: ["general-tests"],
 }
