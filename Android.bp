@@ -18,6 +18,7 @@ cc_defaults {
     name: "libscudo_defaults",
     native_coverage: false,
     ramdisk_available: true,
+    vendor_ramdisk_available: true,
     recovery_available: true,
     host_supported: true,
     native_bridge_supported: true,
@@ -126,7 +127,7 @@ cc_library_static {
     ],
     visibility: [
       "//bionic:__subpackages__",
-      "//frameworks/libs/native_bridge_support/overriding/libc:__subpackages__",
+      "//frameworks/libs/native_bridge_support/libc:__subpackages__",
       "//system/core/debuggerd:__subpackages__",
     ],
 }
@@ -190,4 +191,22 @@ cc_test {
     },
     test_suites: ["general-tests"],
     bootstrap: true,
+}
+
+cc_fuzz {
+    name: "scudo_get_error_info_fuzzer",
+    host_supported: true,
+    compile_multilib: "64",
+    static_libs: ["libscudo"],
+    include_dirs: [
+        "external/scudo/standalone",
+        "external/scudo/standalone/include",
+    ],
+    cflags: [
+        "-Wno-unneeded-internal-declaration",
+    ],
+    srcs: ["standalone/fuzz/get_error_info_fuzzer.cpp"],
+    fuzz_config: {
+        componentid: 87896
+    },
 }
