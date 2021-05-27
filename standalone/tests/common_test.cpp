@@ -29,7 +29,7 @@ static uptr getResidentMemorySize() {
 // Fuchsia needs getResidentMemorySize implementation.
 TEST(ScudoCommonTest, SKIP_ON_FUCHSIA(ResidentMemorySize)) {
   uptr OnStart = getResidentMemorySize();
-  EXPECT_GT(OnStart, 0);
+  EXPECT_GT(OnStart, 0UL);
 
   const uptr Size = 1ull << 30;
   const uptr Threshold = Size >> 3;
@@ -37,7 +37,7 @@ TEST(ScudoCommonTest, SKIP_ON_FUCHSIA(ResidentMemorySize)) {
   MapPlatformData Data = {};
   uptr *P = reinterpret_cast<uptr *>(
       map(nullptr, Size, "ResidentMemorySize", 0, &Data));
-  const uptr N = Size / sizeof(*P);
+  const ptrdiff_t N = Size / sizeof(*P);
   ASSERT_NE(nullptr, P);
   EXPECT_EQ(std::count(P, P + N, 0), N);
   EXPECT_LT(getResidentMemorySize() - OnStart, Threshold);
