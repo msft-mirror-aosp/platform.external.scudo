@@ -121,7 +121,7 @@ uptr getPageSizeSlow();
 inline uptr getPageSizeCached() {
   // Bionic uses a hardcoded value.
   if (SCUDO_ANDROID)
-    return 4096U;
+    return 16384U;
   if (LIKELY(PageSizeCached))
     return PageSizeCached;
   return getPageSizeSlow();
