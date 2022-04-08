@@ -36,7 +36,6 @@ private:
   uptr Length;
 };
 
-int formatString(char *Buffer, uptr BufferLength, const char *Format, ...);
 void Printf(const char *Format, ...);
 
 } // namespace scudo

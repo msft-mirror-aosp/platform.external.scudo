@@ -46,11 +46,11 @@ public:
 
   uptr get(StatType I) const { return atomic_load_relaxed(&StatsArray[I]); }
 
-  LocalStats *Next = nullptr;
-  LocalStats *Prev = nullptr;
+  LocalStats *Next;
+  LocalStats *Prev;
 
 private:
-  atomic_uptr StatsArray[StatCount] = {};
+  atomic_uptr StatsArray[StatCount];
 };
 
 // Global stats, used for aggregation and querying.
@@ -58,9 +58,7 @@ class GlobalStats : public LocalStats {
 public:
   void initLinkerInitialized() {}
   void init() {
-    LocalStats::init();
-    Mutex.init();
-    StatsList = {};
+    memset(this, 0, sizeof(*this));
     initLinkerInitialized();
   }
 
@@ -89,11 +87,8 @@ public:
       S[I] = static_cast<sptr>(S[I]) >= 0 ? S[I] : 0;
   }
 
-  void lock() { Mutex.lock(); }
-  void unlock() { Mutex.unlock(); }
-
-  void disable() { lock(); }
-  void enable() { unlock(); }
+  void disable() { Mutex.lock(); }
+  void enable() { Mutex.unlock(); }
 
 private:
   mutable HybridMutex Mutex;

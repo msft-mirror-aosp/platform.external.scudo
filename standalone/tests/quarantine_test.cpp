@@ -219,17 +219,12 @@ TEST(ScudoQuarantineTest, GlobalQuarantine) {
   Str.output();
 }
 
-struct PopulateQuarantineThread {
-  pthread_t Thread;
-  QuarantineT *Quarantine;
-  CacheT Cache;
-};
-
 void *populateQuarantine(void *Param) {
-  PopulateQuarantineThread *P = static_cast<PopulateQuarantineThread *>(Param);
-  P->Cache.init();
+  CacheT Cache;
+  Cache.init();
+  QuarantineT *Quarantine = reinterpret_cast<QuarantineT *>(Param);
   for (scudo::uptr I = 0; I < 128UL; I++)
-    P->Quarantine->put(&P->Cache, Cb, FakePtr, LargeBlockSize);
+    Quarantine->put(&Cache, Cb, FakePtr, LargeBlockSize);
   return 0;
 }
 
@@ -238,18 +233,13 @@ TEST(ScudoQuarantineTest, ThreadedGlobalQuarantine) {
   Quarantine.init(MaxQuarantineSize, MaxCacheSize);
 
   const scudo::uptr NumberOfThreads = 32U;
-  PopulateQuarantineThread T[NumberOfThreads];
-  for (scudo::uptr I = 0; I < NumberOfThreads; I++) {
-    T[I].Quarantine = &Quarantine;
-    pthread_create(&T[I].Thread, 0, populateQuarantine, &T[I]);
-  }
+  pthread_t T[NumberOfThreads];
   for (scudo::uptr I = 0; I < NumberOfThreads; I++)
-    pthread_join(T[I].Thread, 0);
+    pthread_create(&T[I], 0, populateQuarantine, &Quarantine);
+  for (scudo::uptr I = 0; I < NumberOfThreads; I++)
+    pthread_join(T[I], 0);
 
   scudo::ScopedString Str(1024);
   Quarantine.getStats(&Str);
   Str.output();
-
-  for (scudo::uptr I = 0; I < NumberOfThreads; I++)
-    Quarantine.drainAndRecycle(&T[I].Cache, Cb);
 }

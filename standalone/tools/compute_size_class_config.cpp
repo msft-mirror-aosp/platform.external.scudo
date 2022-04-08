@@ -19,8 +19,9 @@ struct Alloc {
 };
 
 size_t measureWastage(const std::vector<Alloc> &allocs,
-                      const std::vector<size_t> &classes, size_t pageSize,
-                      size_t headerSize) {
+                       const std::vector<size_t> &classes,
+                       size_t pageSize,
+                       size_t headerSize) {
   size_t totalWastage = 0;
   for (auto &a : allocs) {
     size_t sizePlusHeader = a.size + headerSize;
@@ -54,8 +55,7 @@ void readAllocs(std::vector<Alloc> &allocs, const char *path) {
   }
 
   Alloc a;
-  while (fscanf(f, "<alloc size=\"%zu\" count=\"%zu\"/>\n", &a.size,
-                &a.count) == 2)
+  while (fscanf(f, "<alloc size=\"%zu\" count=\"%zu\"/>\n", &a.size, &a.count) == 2)
     allocs.push_back(a);
   fclose(f);
 }
@@ -157,6 +157,5 @@ struct MySizeClassConfig {
   };
   static const uptr SizeDelta = %zu;
 };
-)",
-         headerSize);
+)", headerSize);
 }

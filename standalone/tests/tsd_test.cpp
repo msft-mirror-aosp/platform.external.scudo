@@ -13,7 +13,6 @@
 
 #include <condition_variable>
 #include <mutex>
-#include <set>
 #include <thread>
 
 // We mock out an allocator with a TSD registry, mostly using empty stubs. The
@@ -48,12 +47,12 @@ private:
 
 struct OneCache {
   template <class Allocator>
-  using TSDRegistryT = scudo::TSDRegistrySharedT<Allocator, 1U, 1U>;
+  using TSDRegistryT = scudo::TSDRegistrySharedT<Allocator, 1U>;
 };
 
 struct SharedCaches {
   template <class Allocator>
-  using TSDRegistryT = scudo::TSDRegistrySharedT<Allocator, 16U, 8U>;
+  using TSDRegistryT = scudo::TSDRegistrySharedT<Allocator, 16U>;
 };
 
 struct ExclusiveCaches {
@@ -117,7 +116,7 @@ TEST(ScudoTSDTest, TSDRegistryBasic) {
 
 static std::mutex Mutex;
 static std::condition_variable Cv;
-static bool Ready;
+static bool Ready = false;
 
 template <typename AllocatorT> static void stressCache(AllocatorT *Allocator) {
   auto Registry = Allocator->getTSDRegistry();
@@ -146,7 +145,6 @@ template <typename AllocatorT> static void stressCache(AllocatorT *Allocator) {
 }
 
 template <class AllocatorT> static void testRegistryThreaded() {
-  Ready = false;
   auto Deleter = [](AllocatorT *A) {
     A->unmapTestOnly();
     delete A;
@@ -172,75 +170,4 @@ TEST(ScudoTSDTest, TSDRegistryThreaded) {
 #if !SCUDO_FUCHSIA
   testRegistryThreaded<MockAllocator<ExclusiveCaches>>();
 #endif
-}
-
-static std::set<void *> Pointers;
-
-static void stressSharedRegistry(MockAllocator<SharedCaches> *Allocator) {
-  std::set<void *> Set;
-  auto Registry = Allocator->getTSDRegistry();
-  {
-    std::unique_lock<std::mutex> Lock(Mutex);
-    while (!Ready)
-      Cv.wait(Lock);
-  }
-  Registry->initThreadMaybe(Allocator, /*MinimalInit=*/false);
-  bool UnlockRequired;
-  for (scudo::uptr I = 0; I < 4096U; I++) {
-    auto TSD = Registry->getTSDAndLock(&UnlockRequired);
-    EXPECT_NE(TSD, nullptr);
-    Set.insert(reinterpret_cast<void *>(TSD));
-    if (UnlockRequired)
-      TSD->unlock();
-  }
-  {
-    std::unique_lock<std::mutex> Lock(Mutex);
-    Pointers.insert(Set.begin(), Set.end());
-  }
-}
-
-TEST(ScudoTSDTest, TSDRegistryTSDsCount) {
-  Ready = false;
-  Pointers.clear();
-  using AllocatorT = MockAllocator<SharedCaches>;
-  auto Deleter = [](AllocatorT *A) {
-    A->unmapTestOnly();
-    delete A;
-  };
-  std::unique_ptr<AllocatorT, decltype(Deleter)> Allocator(new AllocatorT,
-                                                           Deleter);
-  Allocator->reset();
-  // We attempt to use as many TSDs as the shared cache offers by creating a
-  // decent amount of threads that will be run concurrently and attempt to get
-  // and lock TSDs. We put them all in a set and count the number of entries
-  // after we are done.
-  std::thread Threads[32];
-  for (scudo::uptr I = 0; I < ARRAY_SIZE(Threads); I++)
-    Threads[I] = std::thread(stressSharedRegistry, Allocator.get());
-  {
-    std::unique_lock<std::mutex> Lock(Mutex);
-    Ready = true;
-    Cv.notify_all();
-  }
-  for (auto &T : Threads)
-    T.join();
-  // The initial number of TSDs we get will be the minimum of the default count
-  // and the number of CPUs.
-  EXPECT_LE(Pointers.size(), 8U);
-  Pointers.clear();
-  auto Registry = Allocator->getTSDRegistry();
-  // Increase the number of TSDs to 16.
-  Registry->setOption(scudo::Option::MaxTSDsCount, 16);
-  Ready = false;
-  for (scudo::uptr I = 0; I < ARRAY_SIZE(Threads); I++)
-    Threads[I] = std::thread(stressSharedRegistry, Allocator.get());
-  {
-    std::unique_lock<std::mutex> Lock(Mutex);
-    Ready = true;
-    Cv.notify_all();
-  }
-  for (auto &T : Threads)
-    T.join();
-  // We should get 16 distinct TSDs back.
-  EXPECT_EQ(Pointers.size(), 16U);
 }
