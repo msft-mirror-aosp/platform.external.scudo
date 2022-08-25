@@ -185,7 +185,7 @@ struct FuchsiaConfig {
 
 struct TrustyConfig {
   using SizeClassMap = TrustySizeClassMap;
-  static const bool MaySupportMemoryTagging = false;
+  static const bool MaySupportMemoryTagging = true;
 
   typedef SizeClassAllocator64<TrustyConfig> Primary;
   // Some apps have 1 page of heap total so small regions are necessary.
