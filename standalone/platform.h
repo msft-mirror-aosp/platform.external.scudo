@@ -33,6 +33,7 @@
 
 #if defined(__TRUSTY__)
 #define SCUDO_TRUSTY 1
+#define SCUDO_FUZZ 1
 #else
 #define SCUDO_TRUSTY 0
 #endif
