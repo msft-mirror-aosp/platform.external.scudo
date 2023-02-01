@@ -70,7 +70,7 @@ void usage() {
 }
 
 int main(int argc, char **argv) {
-  size_t pageSize = 16384;
+  size_t pageSize = TARGET_PAGE_SIZE;
   size_t largestClass = 65552;
   size_t headerSize = 16;
   size_t numClasses = 32;
