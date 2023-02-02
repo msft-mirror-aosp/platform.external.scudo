@@ -189,8 +189,8 @@ struct TrustyConfig {
 
   typedef SizeClassAllocator64<TrustyConfig> Primary;
   // Some apps have 1 page of heap total so small regions are necessary.
-  static const uptr PrimaryRegionSizeLog = 12U;
-  static const uptr PrimaryGroupSizeLog = 12U;
+  static const uptr PrimaryRegionSizeLog = 28U;
+  static const uptr PrimaryGroupSizeLog = 20U;
   typedef u32 PrimaryCompactPtrT;
   static const bool PrimaryEnableRandomOffset = false;
   // Trusty is extremely memory-constrained so minimally round up map calls.
