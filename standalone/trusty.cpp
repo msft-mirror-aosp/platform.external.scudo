@@ -68,6 +68,22 @@ void setMemoryPermission(UNUSED uptr Addr, UNUSED uptr Size, UNUSED uptr Flags,
 void releasePagesToOS(UNUSED uptr BaseAddress, UNUSED uptr Offset,
                       UNUSED uptr Size, UNUSED MapPlatformData *Data) {}
 
+#if TEST_BUILD
+/* Initialized by __init_libc in ./trusty/musl/src/env/__libc_start_main.c */
+extern "C" {
+__WEAK const char* __progname = "<unknown>";
+}
+
+class TrustyScudoInit {
+public:
+  TrustyScudoInit() {
+    printf("'%s' using scudo\n", __progname);
+  }
+};
+
+static TrustyScudoInit namePrinter;
+#endif
+
 const char *getEnv(const char *Name) { return getenv(Name); }
 
 // All mutex operations are a no-op since Trusty doesn't currently support
