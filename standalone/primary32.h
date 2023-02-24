@@ -118,6 +118,8 @@ public:
     return CompactPtr >> GroupSizeLog;
   }
 
+  uptr batchGroupBase(uptr GroupId) { return GroupId << GroupSizeLog; }
+
   TransferBatch *popBatch(CacheT *C, uptr ClassId) {
     DCHECK_LT(ClassId, NumClasses);
     SizeClassInfo *Sci = getSizeClassInfo(ClassId);
@@ -395,14 +397,6 @@ private:
   // Use `SameGroup=true` to indicate that all blocks in the array are from the
   // same group then we will skip checking the group id of each block.
   //
-  // Note that this aims to have a better management of dirty pages, i.e., the
-  // RSS usage won't grow indefinitely. There's an exception that we may not put
-  // a block to its associated group. While populating new blocks, we may have
-  // blocks cross different groups. However, most cases will fall into same
-  // group and they are supposed to be popped soon. In that case, it's not worth
-  // sorting the array with the almost-sorted property. Therefore, we use
-  // `SameGroup=true` instead.
-  //
   // The region mutex needs to be held while calling this method.
   void pushBlocksImpl(CacheT *C, uptr ClassId, SizeClassInfo *Sci,
                       CompactPtrT *Array, u32 Size, bool SameGroup = false)
@@ -537,6 +531,9 @@ private:
     // All the blocks are from the same group, just push without checking group
     // id.
     if (SameGroup) {
+      for (u32 I = 0; I < Size; ++I)
+        DCHECK_EQ(compactPtrGroup(Array[I]), Cur->GroupId);
+
       InsertBlocks(Cur, Array, Size);
       return;
     }
@@ -648,11 +645,29 @@ private:
     uptr P = Region + Offset;
     for (u32 I = 0; I < NumberOfBlocks; I++, P += Size)
       ShuffleArray[I] = reinterpret_cast<CompactPtrT>(P);
-    // No need to shuffle the batches size class.
-    if (ClassId != SizeClassMap::BatchClassId)
-      shuffle(ShuffleArray, NumberOfBlocks, &Sci->RandState);
-    pushBlocksImpl(C, ClassId, Sci, ShuffleArray, NumberOfBlocks,
-                   /*SameGroup=*/true);
+
+    if (ClassId != SizeClassMap::BatchClassId) {
+      u32 N = 1;
+      uptr CurGroup = compactPtrGroup(ShuffleArray[0]);
+      for (u32 I = 1; I < NumberOfBlocks; I++) {
+        if (UNLIKELY(compactPtrGroup(ShuffleArray[I]) != CurGroup)) {
+          shuffle(ShuffleArray + I - N, N, &Sci->RandState);
+          pushBlocksImpl(C, ClassId, Sci, ShuffleArray + I - N, N,
+                         /*SameGroup=*/true);
+          N = 1;
+          CurGroup = compactPtrGroup(ShuffleArray[I]);
+        } else {
+          ++N;
+        }
+      }
+
+      shuffle(ShuffleArray + NumberOfBlocks - N, N, &Sci->RandState);
+      pushBlocksImpl(C, ClassId, Sci, &ShuffleArray[NumberOfBlocks - N], N,
+                     /*SameGroup=*/true);
+    } else {
+      pushBlocksImpl(C, ClassId, Sci, ShuffleArray, NumberOfBlocks,
+                     /*SameGroup=*/true);
+    }
 
     const uptr AllocatedUser = Size * NumberOfBlocks;
     C->getStats().add(StatFree, AllocatedUser);
@@ -764,9 +779,36 @@ private:
       }
 
       BG.PushedBlocksAtLastCheckpoint = BG.PushedBlocks;
-      // Note that we don't always visit blocks in each BatchGroup so that we
-      // may miss the chance of releasing certain pages that cross BatchGroups.
-      Context.markFreeBlocks(BG.Batches, DecompactPtr, Base);
+
+      const uptr MaxContainedBlocks = AllocatedGroupSize / BlockSize;
+      // The first condition to do range marking is that all the blocks in the
+      // range need to be from the same region. In SizeClassAllocator32, this is
+      // true when GroupSize and RegionSize are the same. Another tricky case,
+      // while range marking, the last block in a region needs the logic to mark
+      // the last page. However, in SizeClassAllocator32, the RegionSize
+      // recorded in PageReleaseContext may be different from
+      // `CurrentRegionAllocated` of the current region. This exception excludes
+      // the chance of doing range marking for the current region.
+      const bool CanDoRangeMark =
+          GroupSize == RegionSize && BG.GroupId != CurRegionGroupId;
+
+      if (CanDoRangeMark && NumBlocks == MaxContainedBlocks) {
+        for (const auto &It : BG.Batches)
+          for (u16 I = 0; I < It.getCount(); ++I)
+            DCHECK_EQ(compactPtrGroup(It.get(I)), BG.GroupId);
+
+        const uptr From = batchGroupBase(BG.GroupId);
+        const uptr To = batchGroupBase(BG.GroupId) + AllocatedGroupSize;
+        Context.markRangeAsAllCounted(From, To, Base);
+      } else {
+        if (CanDoRangeMark)
+          DCHECK_LT(NumBlocks, MaxContainedBlocks);
+
+        // Note that we don't always visit blocks in each BatchGroup so that we
+        // may miss the chance of releasing certain pages that cross
+        // BatchGroups.
+        Context.markFreeBlocks(BG.Batches, DecompactPtr, Base);
+      }
     }
 
     if (!Context.hasBlockMarked())
