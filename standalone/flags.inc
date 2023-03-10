@@ -56,7 +56,7 @@ SCUDO_FLAG(int, soft_rss_limit_mb, 0,
            "the soft limit")
 
 #if SCUDO_TRUSTY
-SCUDO_FLAG(int, allocation_ring_buffer_size, 1,
+SCUDO_FLAG(int, allocation_ring_buffer_size, 0,
            "Entries to keep in the allocation ring buffer for scudo.")
 #else
 SCUDO_FLAG(int, allocation_ring_buffer_size, 32768,
