@@ -118,6 +118,7 @@ cc_defaults {
         "standalone/flags.cpp",
         "standalone/flags_parser.cpp",
         "standalone/linux.cpp",
+        "standalone/mem_map.cpp",
         "standalone/release.cpp",
         "standalone/report.cpp",
         "standalone/rss_limit_checker.cpp",
