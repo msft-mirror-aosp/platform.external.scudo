@@ -194,8 +194,13 @@ cc_defaults {
         "external/scudo/standalone/include",
     ],
     cflags: [
-        "-Wno-unused-parameter",
         "-fno-emulated-tls",
+        // In memtag_test.cpp, some tests are disabled by GTEST_SKIP() so that
+        // they won't be run. However, for those disabled tests, it may contain
+        // unreachable code paths which will mislead some compiler checks. Given
+        // this flag won't be impacted too much, disable it only in the test.
+        "-Wno-unreachable-code-loop-increment",
+        "-Wno-unused-parameter",
         "-DSCUDO_DEBUG",
     ],
     target: {
@@ -222,6 +227,7 @@ cc_test {
         "standalone/tests/flags_test.cpp",
         "standalone/tests/list_test.cpp",
         "standalone/tests/map_test.cpp",
+        "standalone/tests/memtag_test.cpp",
         "standalone/tests/mutex_test.cpp",
         "standalone/tests/primary_test.cpp",
         "standalone/tests/quarantine_test.cpp",
