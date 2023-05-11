@@ -34,6 +34,7 @@ public:
   bool mapImpl(uptr Addr, uptr Size, const char *Name, uptr Flags);
   void unmapImpl(uptr Addr, uptr Size);
   bool remapImpl(uptr Addr, uptr Size, const char *Name, uptr Flags);
+  void setMemoryPermissionImpl(uptr Addr, uptr Size, uptr Flags);
   void releasePagesToOSImpl(uptr From, uptr Size) {
     return releaseAndZeroPagesToOSImpl(From, Size);
   }
@@ -46,6 +47,7 @@ public:
 private:
   uptr Base = 0;
   uptr Capacity = 0;
+  uptr MappedBase = 0;
   MapPlatformData Data = {};
 };
 
