@@ -277,12 +277,10 @@ struct TrustyConfig {
 
   struct Primary {
     using SizeClassMap = TrustySizeClassMap;
-    // Some apps have 1 page of heap total so small regions are necessary.
     static const uptr RegionSizeLog = 28U;
     static const uptr GroupSizeLog = 20U;
     typedef u32 CompactPtrT;
     static const bool EnableRandomOffset = false;
-    // Trusty is extremely memory-constrained so minimally round up map calls.
     static const uptr MapSizeIncrement = 1UL << 12;
     static const uptr CompactPtrScale = SCUDO_MIN_ALIGNMENT_LOG;
     static const s32 MinReleaseToOsIntervalMs = INT32_MIN;

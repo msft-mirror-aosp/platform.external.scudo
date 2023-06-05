@@ -15,13 +15,13 @@
 #include "trusty.h"
 
 #include <errno.h>           // for errno
+#include <lk/err_ptr.h>      // for PTR_ERR and IS_ERR
 #include <stdio.h>           // for printf()
 #include <stdlib.h>          // for getenv()
 #include <sys/auxv.h>        // for getauxval()
 #include <time.h>            // for clock_gettime()
 #include <trusty_err.h>      // for lk_err_to_errno()
 #include <trusty_syscalls.h> // for _trusty_brk()
-#include <lk/err_ptr.h>      // for PTR_ERR and IS_ERR
 #include <uapi/mm.h>         // for MMAP flags
 
 namespace scudo {
@@ -32,7 +32,8 @@ void NORETURN die() { abort(); }
 
 void *map(void *Addr, uptr Size, const char *Name, uptr Flags,
           UNUSED MapPlatformData *Data) {
-  uint32_t MmapFlags = MMAP_FLAG_ANONYMOUS | MMAP_FLAG_PROT_READ | MMAP_FLAG_PROT_WRITE;
+  uint32_t MmapFlags =
+      MMAP_FLAG_ANONYMOUS | MMAP_FLAG_PROT_READ | MMAP_FLAG_PROT_WRITE;
 
   // If the MAP_NOACCESS flag is set, Scudo tries to reserve
   // a memory region without mapping physical pages. This corresponds
@@ -45,7 +46,7 @@ void *map(void *Addr, uptr Size, const char *Name, uptr Flags,
   if (Flags & MAP_MEMTAG)
     MmapFlags |= MMAP_FLAG_PROT_MTE;
 
-  void* P = (void*)_trusty_mmap(Addr, Size, MmapFlags, 0);
+  void *P = (void *)_trusty_mmap(Addr, Size, MmapFlags, 0);
 
   if (IS_ERR(P)) {
     errno = lk_err_to_errno(PTR_ERR(P));

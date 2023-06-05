@@ -311,8 +311,6 @@ struct SvelteSizeClassConfig {
 
 typedef FixedSizeClassMap<SvelteSizeClassConfig> SvelteSizeClassMap;
 
-// Trusty is configured to only have one region containing blocks of size
-// 2^7 bytes.
 struct TrustySizeClassConfig {
   static const uptr NumBits = 1;
   static const uptr MinSizeLog = 5;
