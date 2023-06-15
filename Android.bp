@@ -210,6 +210,9 @@ cc_defaults {
     },
     test_suites: ["general-tests"],
     bootstrap: true,
+    srcs: [
+        "standalone/tests/scudo_unit_test_main.cpp",
+    ],
 }
 
 cc_test {
@@ -233,7 +236,6 @@ cc_test {
         "standalone/tests/quarantine_test.cpp",
         "standalone/tests/release_test.cpp",
         "standalone/tests/report_test.cpp",
-        "standalone/tests/scudo_unit_test_main.cpp",
         "standalone/tests/secondary_test.cpp",
         "standalone/tests/size_class_map_test.cpp",
         "standalone/tests/stats_test.cpp",
@@ -249,8 +251,22 @@ cc_test {
     defaults: ["scudo_unit_tests_default"],
     host_supported: true,
     srcs: [
-      "standalone/tests/scudo_hooks_test.cpp",
-      "standalone/tests/scudo_unit_test_main.cpp",
+        "standalone/tests/scudo_hooks_test.cpp",
+    ],
+}
+
+cc_test {
+    name: "scudo_wrappers_unit_tests",
+    defaults: ["scudo_unit_tests_default"],
+    // These are wrapper tests, disable the host tests since they would run
+    // against glibc.
+    host_supported: false,
+    cflags: [
+        "-Wno-mismatched-new-delete",
+    ],
+    srcs: [
+        "standalone/tests/wrappers_c_test.cpp",
+        "standalone/tests/wrappers_cpp_test.cpp",
     ],
 }
 
