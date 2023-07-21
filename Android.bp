@@ -87,6 +87,7 @@ cc_defaults {
         "-Wextra",
         "-Wunused",
         "-Wno-unused-result",
+        "-Wconversion",
 
         "-Werror=pointer-to-int-cast",
         "-Werror=int-to-pointer-cast",
@@ -195,12 +196,12 @@ cc_defaults {
     ],
     cflags: [
         "-fno-emulated-tls",
+        "-Wconversion",
         // In memtag_test.cpp, some tests are disabled by GTEST_SKIP() so that
         // they won't be run. However, for those disabled tests, it may contain
         // unreachable code paths which will mislead some compiler checks. Given
         // this flag won't be impacted too much, disable it only in the test.
         "-Wno-unreachable-code-loop-increment",
-        "-Wno-unused-parameter",
         "-DSCUDO_DEBUG",
     ],
     target: {
