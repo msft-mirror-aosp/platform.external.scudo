@@ -111,21 +111,21 @@ static const uptr MaxUnusedCachePages = SCUDO_TRUSTY ? 1U : 4U;
 template <typename Config>
 bool mapSecondary(Options Options, uptr CommitBase, uptr CommitSize,
                   uptr AllocPos, uptr Flags, MemMapT &MemMap) {
-  bool ret = false;
+  Flags |= MAP_RESIZABLE;
+  Flags |= MAP_ALLOWNOMEM;
+
   const uptr MaxUnusedCacheBytes = MaxUnusedCachePages * getPageSizeCached();
   if (useMemoryTagging<Config>(Options) && CommitSize > MaxUnusedCacheBytes) {
     const uptr UntaggedPos = Max(AllocPos, CommitBase + MaxUnusedCacheBytes);
-    ret = MemMap.remap(CommitBase, UntaggedPos - CommitBase, "scudo:secondary",
-                       MAP_RESIZABLE | MAP_MEMTAG | MAP_ALLOWNOMEM | Flags) &&
-          MemMap.remap(UntaggedPos, CommitBase + CommitSize - UntaggedPos,
-                 "scudo:secondary", MAP_RESIZABLE | MAP_ALLOWNOMEM | Flags);
+    return MemMap.remap(CommitBase, UntaggedPos - CommitBase, "scudo:secondary",
+                        MAP_MEMTAG | Flags) &&
+           MemMap.remap(UntaggedPos, CommitBase + CommitSize - UntaggedPos,
+                        "scudo:secondary", Flags);
   } else {
     const uptr RemapFlags =
-        MAP_RESIZABLE | (useMemoryTagging<Config>(Options) ? MAP_MEMTAG : 0) |
-        MAP_ALLOWNOMEM | Flags;
-    ret = MemMap.remap(CommitBase, CommitSize, "scudo:secondary", RemapFlags);
+        (useMemoryTagging<Config>(Options) ? MAP_MEMTAG : 0) | Flags;
+    return MemMap.remap(CommitBase, CommitSize, "scudo:secondary", RemapFlags);
   }
-  return ret;
 }
 
 // Template specialization to avoid producing zero-length array
@@ -304,8 +304,7 @@ public:
       } else if (Entry.BlockBegin < NewBlockBegin) {
         storeTags(Entry.BlockBegin, NewBlockBegin);
       } else {
-        storeTags(untagPointer(NewBlockBegin),
-                  untagPointer(Entry.BlockBegin));
+        storeTags(untagPointer(NewBlockBegin), untagPointer(Entry.BlockBegin));
       }
     }
     (*H)->CommitBase = Entry.CommitBase;
@@ -603,8 +602,8 @@ void *MapAllocator<Config>::allocate(Options Options, uptr Size, uptr Alignment,
   const uptr AllocPos = roundDown(CommitBase + CommitSize - Size, Alignment);
   if (!mapSecondary<Config>(Options, CommitBase, CommitSize, AllocPos, 0,
                             MemMap)) {
-      MemMap.unmap(MemMap.getBase(), MemMap.getCapacity());
-      return nullptr;
+    MemMap.unmap(MemMap.getBase(), MemMap.getCapacity());
+    return nullptr;
   }
   const uptr HeaderPos =
       AllocPos - Chunk::getHeaderSize() - LargeBlock::getHeaderSize();
