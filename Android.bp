@@ -103,6 +103,9 @@ cc_defaults {
         // Allow scudo to use android_unsafe_frame_pointer_chase(), which is
         // normally a private function.
         "-DHAVE_ANDROID_UNSAFE_FRAME_POINTER_CHASE",
+
+        // Use a custom Android configuration.
+        "-DSCUDO_USE_CUSTOM_CONFIG",
     ],
     cppflags: [
         "-nostdinc++",
@@ -110,6 +113,7 @@ cc_defaults {
     ],
 
     include_dirs: [
+        "external/scudo/config",
         "external/scudo/standalone/include",
     ],
 
@@ -264,6 +268,12 @@ cc_test {
     host_supported: false,
     cflags: [
         "-Wno-mismatched-new-delete",
+
+        // Use a custom Android configuration.
+        "-DSCUDO_USE_CUSTOM_CONFIG",
+    ],
+    include_dirs: [
+        "external/scudo/config",
     ],
     srcs: [
         "standalone/tests/wrappers_c_test.cpp",
