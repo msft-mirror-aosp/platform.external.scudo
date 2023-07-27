@@ -48,6 +48,7 @@ license {
 
 cc_library_headers {
     name: "scudo_headers",
+    ramdisk_available: true,
     recovery_available: true,
     vendor_ramdisk_available: true,
 
@@ -57,6 +58,7 @@ cc_library_headers {
 
     apex_available: [
         "com.android.runtime",
+        "//apex_available:platform",
     ],
 
     visibility: [
