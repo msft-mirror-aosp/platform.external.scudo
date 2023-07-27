@@ -90,7 +90,7 @@ template <typename Config> class MapAllocatorNoCache {
 public:
   void init(UNUSED s32 ReleaseToOsInterval) {}
   bool retrieve(UNUSED uptr Size, UNUSED CachedBlock &Entry) { return false; }
-  void store(UNUSED Options Options, LargeBlock::Header *H) { unmap(H); }
+  void store(UNUSED const Options &Options, LargeBlock::Header *H) { unmap(H); }
   bool canCache(UNUSED uptr Size) { return false; }
   void disable() {}
   void enable() {}
@@ -120,7 +120,7 @@ public:
 static const uptr MaxUnusedCachePages = SCUDO_TRUSTY ? 1U : 4U;
 
 template <typename Config>
-bool mapSecondary(Options Options, uptr CommitBase, uptr CommitSize,
+bool mapSecondary(const Options &Options, uptr CommitBase, uptr CommitSize,
                   uptr AllocPos, uptr Flags, MemMapT &MemMap) {
   Flags |= MAP_RESIZABLE;
   Flags |= MAP_ALLOWNOMEM;
@@ -186,7 +186,7 @@ public:
     setOption(Option::ReleaseInterval, static_cast<sptr>(ReleaseToOsInterval));
   }
 
-  void store(Options Options, LargeBlock::Header *H) EXCLUDES(Mutex) {
+  void store(const Options &Options, LargeBlock::Header *H) EXCLUDES(Mutex) {
     if (!canCache(H->CommitSize))
       return unmap(H);
 
@@ -414,11 +414,11 @@ public:
       S->link(&Stats);
   }
 
-  void *allocate(Options Options, uptr Size, uptr AlignmentHint = 0,
+  void *allocate(const Options &Options, uptr Size, uptr AlignmentHint = 0,
                  uptr *BlockEnd = nullptr,
                  FillContentsMode FillContents = NoFill);
 
-  void deallocate(Options Options, void *Ptr);
+  void deallocate(const Options &Options, void *Ptr);
 
   static uptr getBlockEnd(void *Ptr) {
     auto *B = LargeBlock::getHeader<Config>(Ptr);
@@ -450,7 +450,7 @@ public:
     }
   }
 
-  inline void setHeader(Options Options, CachedBlock &Entry,
+  inline void setHeader(const Options &Options, CachedBlock &Entry,
                         LargeBlock::Header *H, bool &Zeroed) {
     Zeroed = Entry.Time == 0;
     if (useMemoryTagging<Config>(Options)) {
@@ -508,8 +508,8 @@ private:
 // the committed memory will amount to something close to Size - AlignmentHint
 // (pending rounding and headers).
 template <typename Config>
-void *MapAllocator<Config>::allocate(Options Options, uptr Size, uptr Alignment,
-                                     uptr *BlockEndPtr,
+void *MapAllocator<Config>::allocate(const Options &Options, uptr Size,
+                                     uptr Alignment, uptr *BlockEndPtr,
                                      FillContentsMode FillContents) {
   if (Options.get(OptionBit::AddLargeAllocationSlack))
     Size += 1UL << SCUDO_MIN_ALIGNMENT_LOG;
@@ -627,7 +627,7 @@ void *MapAllocator<Config>::allocate(Options Options, uptr Size, uptr Alignment,
 }
 
 template <typename Config>
-void MapAllocator<Config>::deallocate(Options Options, void *Ptr)
+void MapAllocator<Config>::deallocate(const Options &Options, void *Ptr)
     EXCLUDES(Mutex) {
   LargeBlock::Header *H = LargeBlock::getHeader<Config>(Ptr);
   const uptr CommitSize = H->CommitSize;
