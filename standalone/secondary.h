@@ -79,6 +79,10 @@ struct CachedBlock {
   uptr BlockBegin = 0;
   MemMapT MemMap = {};
   u64 Time = 0;
+
+  bool isValid() { return CommitBase != 0; }
+
+  void invalidate() { CommitBase = 0; }
 };
 } // namespace
 
@@ -159,7 +163,7 @@ public:
                 EntriesCount, atomic_load_relaxed(&MaxEntriesCount),
                 atomic_load_relaxed(&MaxEntrySize));
     for (CachedBlock Entry : Entries) {
-      if (!Entry.CommitBase)
+      if (!Entry.isValid())
         continue;
       Str->append("StartBlockAddress: 0x%zx, EndBlockAddress: 0x%zx, "
                   "BlockSize: %zu\n",
@@ -226,7 +230,7 @@ public:
       if (CacheConfig::QuarantineSize && useMemoryTagging<Config>(Options)) {
         QuarantinePos =
             (QuarantinePos + 1) % Max(CacheConfig::QuarantineSize, 1u);
-        if (!Quarantine[QuarantinePos].CommitBase) {
+        if (!Quarantine[QuarantinePos].isValid()) {
           Quarantine[QuarantinePos] = Entry;
           return;
         }
@@ -241,7 +245,7 @@ public:
           EmptyCache = true;
       } else {
         for (u32 I = 0; I < MaxCount; I++) {
-          if (Entries[I].CommitBase)
+          if (Entries[I].isValid())
             continue;
           if (I != 0)
             Entries[I] = Entries[0];
@@ -270,13 +274,13 @@ public:
       if (EntriesCount == 0)
         return false;
       for (u32 I = 0; I < MaxCount; I++) {
-        if (!Entries[I].CommitBase)
+        if (!Entries[I].isValid())
           continue;
         if (Size > Entries[I].CommitSize)
           continue;
         Found = true;
         Entry = Entries[I];
-        Entries[I].CommitBase = 0;
+        Entries[I].invalidate();
         EntriesCount--;
         break;
       }
@@ -317,15 +321,15 @@ public:
   void disableMemoryTagging() EXCLUDES(Mutex) {
     ScopedLock L(Mutex);
     for (u32 I = 0; I != CacheConfig::QuarantineSize; ++I) {
-      if (Quarantine[I].CommitBase) {
+      if (Quarantine[I].isValid()) {
         MemMapT &MemMap = Quarantine[I].MemMap;
         MemMap.unmap(MemMap.getBase(), MemMap.getCapacity());
-        Quarantine[I].CommitBase = 0;
+        Quarantine[I].invalidate();
       }
     }
     const u32 MaxCount = atomic_load_relaxed(&MaxEntriesCount);
     for (u32 I = 0; I < MaxCount; I++) {
-      if (Entries[I].CommitBase) {
+      if (Entries[I].isValid()) {
         Entries[I].MemMap.setMemoryPermission(Entries[I].CommitBase,
                                               Entries[I].CommitSize, 0);
       }
@@ -346,10 +350,10 @@ private:
     {
       ScopedLock L(Mutex);
       for (uptr I = 0; I < CacheConfig::EntriesArraySize; I++) {
-        if (!Entries[I].CommitBase)
+        if (!Entries[I].isValid())
           continue;
         MapInfo[N] = Entries[I].MemMap;
-        Entries[I].CommitBase = 0;
+        Entries[I].invalidate();
         N++;
       }
       EntriesCount = 0;
@@ -362,7 +366,7 @@ private:
   }
 
   void releaseIfOlderThan(CachedBlock &Entry, u64 Time) REQUIRES(Mutex) {
-    if (!Entry.CommitBase || !Entry.Time)
+    if (!Entry.isValid() || !Entry.Time)
       return;
     if (Entry.Time > Time) {
       if (OldestTime == 0 || Entry.Time < OldestTime)
