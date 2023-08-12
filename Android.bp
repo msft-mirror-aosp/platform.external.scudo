@@ -301,3 +301,30 @@ cc_fuzz {
         componentid: 87896
     },
 }
+
+cc_test {
+    name: "size_map_verify_unit_tests",
+    host_supported: true,
+    static_libs: ["libscudo"],
+
+    include_dirs: [
+        "external/scudo/standalone",
+        "external/scudo/standalone/include",
+        "external/scudo/standalone/tools",
+    ],
+    srcs: [
+        "standalone/tests/size_map_verify_unit_tests.cpp",
+    ],
+
+}
+
+cc_binary {
+    name: "size_map_gen",
+    host_supported: true,
+    static_libs: ["libscudo"],
+    include_dirs: [
+        "external/scudo/standalone",
+        "external/scudo/standalone/include",
+    ],
+    srcs: ["standalone/tools/size_map_gen.cpp"],
+}
