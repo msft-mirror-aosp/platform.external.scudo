@@ -308,12 +308,13 @@ cc_test {
     static_libs: ["libscudo"],
 
     include_dirs: [
+        "external/scudo/android/tools",
         "external/scudo/standalone",
         "external/scudo/standalone/include",
         "external/scudo/standalone/tools",
     ],
     srcs: [
-        "standalone/tests/size_map_verify_unit_tests.cpp",
+        "android/tests/size_map_verify_unit_tests.cpp",
     ],
 
 }
@@ -323,8 +324,9 @@ cc_binary {
     host_supported: true,
     static_libs: ["libscudo"],
     include_dirs: [
+        "external/scudo/android/tools",
         "external/scudo/standalone",
         "external/scudo/standalone/include",
     ],
-    srcs: ["standalone/tools/size_map_gen.cpp"],
+    srcs: ["android/tools/size_map_gen.cpp"],
 }
