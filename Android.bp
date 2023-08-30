@@ -254,30 +254,26 @@ cc_test {
     ],
 }
 
-// Temporarily disable the wrappers tests because it's testing the hooks in a
-// way that is not supported on Android.
-// TODO(chiahungduan): Enable the wrappers tests once we are able to turn off
-//                     the testing on hooks.
-// cc_test {
-//     name: "scudo_wrappers_unit_tests",
-//     defaults: ["scudo_unit_tests_default"],
-//     // These are wrapper tests, disable the host tests since they would run
-//     // against glibc.
-//     host_supported: false,
-//     cflags: [
-//         "-Wno-mismatched-new-delete",
-//
-//         // Use a custom Android configuration.
-//         "-DSCUDO_USE_CUSTOM_CONFIG",
-//     ],
-//     include_dirs: [
-//         "external/scudo/config",
-//     ],
-//     srcs: [
-//         "standalone/tests/wrappers_c_test.cpp",
-//         "standalone/tests/wrappers_cpp_test.cpp",
-//     ],
-// }
+cc_test {
+    name: "scudo_wrappers_unit_tests",
+    defaults: ["scudo_unit_tests_default"],
+    // These are wrapper tests, disable the host tests since they would run
+    // against glibc.
+    host_supported: false,
+    cflags: [
+        "-Wno-mismatched-new-delete",
+
+        // Use a custom Android configuration.
+        "-DSCUDO_USE_CUSTOM_CONFIG",
+    ],
+    include_dirs: [
+        "external/scudo/config",
+    ],
+    srcs: [
+        "standalone/tests/wrappers_c_test.cpp",
+        "standalone/tests/wrappers_cpp_test.cpp",
+    ],
+}
 
 cc_fuzz {
     name: "scudo_get_error_info_fuzzer",
