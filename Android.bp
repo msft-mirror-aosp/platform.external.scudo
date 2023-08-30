@@ -129,7 +129,6 @@ cc_defaults {
         "standalone/mem_map_linux.cpp",
         "standalone/release.cpp",
         "standalone/report.cpp",
-        "standalone/rss_limit_checker.cpp",
         "standalone/string_utils.cpp",
         "standalone/timing.cpp",
         "standalone/wrappers_c_bionic.cpp"
