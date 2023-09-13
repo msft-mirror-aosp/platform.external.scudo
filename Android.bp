@@ -195,6 +195,7 @@ cc_library_static {
 
 cc_defaults {
     name: "scudo_unit_tests_default",
+    isolated: true,
     static_libs: ["libscudo_for_testing"],
     include_dirs: [
         "external/scudo/standalone",
@@ -209,6 +210,7 @@ cc_defaults {
         // this flag won't be impacted too much, disable it only in the test.
         "-Wno-unreachable-code-loop-increment",
         "-DSCUDO_DEBUG",
+        "-DSCUDO_NO_TEST_MAIN",
     ],
     target: {
         bionic: {
