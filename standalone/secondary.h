@@ -601,7 +601,7 @@ void *MapAllocator<Config>::allocate(const Options &Options, uptr Size,
         ScopedLock L(Mutex);
         InUseBlocks.push_back(H);
         AllocatedBytes += H->CommitSize;
-        FragmentedBytes += reinterpret_cast<uptr>(H) - H->CommitBase;
+        FragmentedBytes += H->MemMap.getCapacity() - H->CommitSize;
         NumberOfAllocs++;
         Stats.add(StatAllocated, H->CommitSize);
         Stats.add(StatMapped, H->MemMap.getCapacity());
@@ -675,7 +675,7 @@ void *MapAllocator<Config>::allocate(const Options &Options, uptr Size,
     ScopedLock L(Mutex);
     InUseBlocks.push_back(H);
     AllocatedBytes += CommitSize;
-    FragmentedBytes += reinterpret_cast<uptr>(H) - H->CommitBase;
+    FragmentedBytes += H->MemMap.getCapacity() - CommitSize;
     if (LargestSize < CommitSize)
       LargestSize = CommitSize;
     NumberOfAllocs++;
@@ -694,7 +694,7 @@ void MapAllocator<Config>::deallocate(const Options &Options, void *Ptr)
     ScopedLock L(Mutex);
     InUseBlocks.remove(H);
     FreedBytes += CommitSize;
-    FragmentedBytes -= reinterpret_cast<uptr>(H) - H->CommitBase;
+    FragmentedBytes -= H->MemMap.getCapacity() - CommitSize;
     NumberOfFrees++;
     Stats.sub(StatAllocated, CommitSize);
     Stats.sub(StatMapped, H->MemMap.getCapacity());
