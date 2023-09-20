@@ -227,9 +227,7 @@ cc_defaults {
 cc_test {
     name: "scudo_unit_tests",
     defaults: ["scudo_unit_tests_default"],
-    // Temporarily disabled on host due to a 15-20s per-test timeout,
-    // which is currently exceeded by ScudoCombinedTest.BasicCombined.
-    host_supported: false,
+    host_supported: true,
     srcs: [
         "standalone/tests/atomic_test.cpp",
         "standalone/tests/bytemap_test.cpp",
