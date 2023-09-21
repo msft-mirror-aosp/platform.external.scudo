@@ -129,7 +129,6 @@ cc_defaults {
         "standalone/mem_map_linux.cpp",
         "standalone/release.cpp",
         "standalone/report.cpp",
-        "standalone/rss_limit_checker.cpp",
         "standalone/string_utils.cpp",
         "standalone/timing.cpp",
         "standalone/wrappers_c_bionic.cpp"
@@ -196,6 +195,7 @@ cc_library_static {
 
 cc_defaults {
     name: "scudo_unit_tests_default",
+    isolated: true,
     static_libs: ["libscudo_for_testing"],
     include_dirs: [
         "external/scudo/standalone",
@@ -210,6 +210,7 @@ cc_defaults {
         // this flag won't be impacted too much, disable it only in the test.
         "-Wno-unreachable-code-loop-increment",
         "-DSCUDO_DEBUG",
+        "-DSCUDO_NO_TEST_MAIN",
     ],
     target: {
         bionic: {
@@ -226,9 +227,7 @@ cc_defaults {
 cc_test {
     name: "scudo_unit_tests",
     defaults: ["scudo_unit_tests_default"],
-    // Temporarily disabled on host due to a 15-20s per-test timeout,
-    // which is currently exceeded by ScudoCombinedTest.BasicCombined.
-    host_supported: false,
+    host_supported: true,
     srcs: [
         "standalone/tests/atomic_test.cpp",
         "standalone/tests/bytemap_test.cpp",
@@ -251,15 +250,6 @@ cc_test {
         "standalone/tests/timing_test.cpp",
         "standalone/tests/tsd_test.cpp",
         "standalone/tests/vector_test.cpp",
-    ],
-}
-
-cc_test {
-    name: "scudo_hooks_unit_tests",
-    defaults: ["scudo_unit_tests_default"],
-    host_supported: true,
-    srcs: [
-        "standalone/tests/scudo_hooks_test.cpp",
     ],
 }
 
