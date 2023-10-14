@@ -67,7 +67,29 @@ cc_library_headers {
 }
 
 cc_defaults {
+    name: "scudo_config_defaults",
+    cflags: [
+        // Use a custom Android configuration.
+        "-DSCUDO_USE_CUSTOM_CONFIG",
+
+        // Enable the svelte config by default.
+        "-DSVELTE_ENABLED",
+    ],
+
+    include_dirs: [
+        "external/scudo/config",
+    ],
+
+    product_variables: {
+        malloc_not_svelte: {
+            cflags: ["-USVELTE_ENABLED"],
+        },
+    },
+}
+
+cc_defaults {
     name: "libscudo_defaults",
+    defaults: ["scudo_config_defaults"],
     native_coverage: false,
     ramdisk_available: true,
     vendor_ramdisk_available: true,
@@ -105,9 +127,6 @@ cc_defaults {
         // Allow scudo to use android_unsafe_frame_pointer_chase(), which is
         // normally a private function.
         "-DHAVE_ANDROID_UNSAFE_FRAME_POINTER_CHASE",
-
-        // Use a custom Android configuration.
-        "-DSCUDO_USE_CUSTOM_CONFIG",
     ],
     cppflags: [
         "-nostdinc++",
@@ -115,7 +134,6 @@ cc_defaults {
     ],
 
     include_dirs: [
-        "external/scudo/config",
         "external/scudo/standalone/include",
     ],
 
@@ -129,6 +147,7 @@ cc_defaults {
         "standalone/mem_map_linux.cpp",
         "standalone/release.cpp",
         "standalone/report.cpp",
+        "standalone/report_linux.cpp",
         "standalone/string_utils.cpp",
         "standalone/timing.cpp",
         "standalone/wrappers_c_bionic.cpp"
@@ -195,6 +214,7 @@ cc_library_static {
 
 cc_defaults {
     name: "scudo_unit_tests_default",
+    defaults: ["scudo_config_defaults"],
     isolated: true,
     static_libs: ["libscudo_for_testing"],
     include_dirs: [
@@ -261,12 +281,6 @@ cc_test {
     host_supported: false,
     cflags: [
         "-Wno-mismatched-new-delete",
-
-        // Use a custom Android configuration.
-        "-DSCUDO_USE_CUSTOM_CONFIG",
-    ],
-    include_dirs: [
-        "external/scudo/config",
     ],
     srcs: [
         "standalone/tests/wrappers_c_test.cpp",
@@ -319,4 +333,46 @@ cc_binary {
         "external/scudo/standalone/include",
     ],
     srcs: ["android/tools/size_map_gen.cpp"],
+}
+
+// The targets below verify that all configuration is set up properly for
+// the library or tests.
+cc_defaults {
+    name: "scudo_verify_defaults",
+    host_supported: true,
+    srcs: ["config/config_build_check.cpp"],
+
+    cflags: ["-DSVELTE_CHECK"],
+
+    include_dirs: [
+        "external/scudo/standalone",
+    ],
+
+    product_variables: {
+        malloc_not_svelte: {
+            cflags: ["-USVELTE_CHECK"],
+        },
+    },
+}
+
+cc_library {
+    name: "libscudo_verify_config",
+    stl: "libc++",
+    defaults: [
+        "scudo_verify_defaults",
+        "libscudo_defaults",
+    ],
+    target: {
+        bionic: {
+            system_shared_libs: ["libc"],
+        },
+    },
+}
+
+cc_test {
+    name: "scudo_verify_config",
+    defaults: [
+        "scudo_verify_defaults",
+        "scudo_unit_tests_default",
+    ],
 }
