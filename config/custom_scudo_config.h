@@ -77,7 +77,8 @@ struct AndroidNormalSizeClassConfig {
 #endif
 };
 
-typedef TableSizeClassMap<AndroidSizeClassConfig> AndroidNormalSizeClassMap;
+typedef TableSizeClassMap<AndroidNormalSizeClassConfig>
+    AndroidNormalSizeClassMap;
 
 #if defined(__LP64__)
 static_assert(AndroidNormalSizeClassMap::usesCompressedLSBFormat(), "");
