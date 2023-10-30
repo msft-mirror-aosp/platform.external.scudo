@@ -140,6 +140,7 @@ cc_defaults {
     srcs: [
         "standalone/checksum.cpp",
         "standalone/common.cpp",
+        "standalone/condition_variable_linux.cpp",
         "standalone/flags.cpp",
         "standalone/flags_parser.cpp",
         "standalone/linux.cpp",
@@ -254,6 +255,7 @@ cc_test {
         "standalone/tests/checksum_test.cpp",
         "standalone/tests/chunk_test.cpp",
         "standalone/tests/combined_test.cpp",
+        "standalone/tests/condition_variable_test.cpp",
         "standalone/tests/flags_test.cpp",
         "standalone/tests/list_test.cpp",
         "standalone/tests/map_test.cpp",
