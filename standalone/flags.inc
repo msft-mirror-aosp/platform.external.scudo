@@ -48,8 +48,10 @@ SCUDO_FLAG(int, release_to_os_interval_ms, SCUDO_ANDROID ? INT32_MIN : 5000,
 
 #if SCUDO_TRUSTY
 SCUDO_FLAG(int, allocation_ring_buffer_size, 0,
-           "Entries to keep in the allocation ring buffer for scudo.")
+           "Entries to keep in the allocation ring buffer for scudo. "
+           "Values less or equal to zero disable the buffer.")
 #else
 SCUDO_FLAG(int, allocation_ring_buffer_size, 32768,
-           "Entries to keep in the allocation ring buffer for scudo.")
+           "Entries to keep in the allocation ring buffer for scudo. "
+           "Values less or equal to zero disable the buffer.")
 #endif
