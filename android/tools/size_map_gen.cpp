@@ -6,6 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "allocator_config.h"
 #include "libsize_map_verify.h"
 #include "size_class_map.h"
 #include <iostream>
@@ -17,14 +18,15 @@ int main() {
   std::string optimizeMessage;
   std::string dumpMessage;
 
-  fullyPassed =
-      fullyPassed &&
-      scudo::generateNumBits<scudo::AndroidSizeClassConfig>(NumBitsMessage);
-  fullyPassed =
-      fullyPassed &&
-      scudo::verifySizeClass<scudo::AndroidSizeClassConfig>(verifySizeMessage);
-  scudo::optimizeMidSizeLog<scudo::AndroidSizeClassConfig>(optimizeMessage);
-  scudo::dumpszTableInfo<scudo::AndroidSizeClassConfig>(dumpMessage);
+  fullyPassed = fullyPassed &&
+                scudo::generateNumBits<scudo::AndroidNormalSizeClassConfig>(
+                    NumBitsMessage);
+  fullyPassed = fullyPassed &&
+                scudo::verifySizeClass<scudo::AndroidNormalSizeClassConfig>(
+                    verifySizeMessage);
+  scudo::optimizeMidSizeLog<scudo::AndroidNormalSizeClassConfig>(
+      optimizeMessage);
+  scudo::dumpszTableInfo<scudo::AndroidNormalSizeClassConfig>(dumpMessage);
 
   if (!NumBitsMessage.empty()) {
     std::cout << "NumBits Calculator:" << std::endl;
@@ -49,7 +51,7 @@ int main() {
     std::cout << "Errors Detected. Check NumBits Calculator or Size "
                  "Verification\n\n";
 
-  scudo::validateMap<scudo::AndroidSizeClassMap>();
+  scudo::validateMap<scudo::AndroidNormalSizeClassMap>();
 
   return fullyPassed ? 0 : 1;
 }
