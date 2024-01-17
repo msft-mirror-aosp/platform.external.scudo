@@ -156,9 +156,9 @@ template <typename Config> bool verifySizeClass(std::string &manipMessage) {
     return false;
   }
   if (ClassesFunc[len - 1] - Config::SizeDelta != MaxSize) {
-    manipMessage += "MaxSizeLog + SizeDelta not equal to the largest size. " +
-                    std::to_string(MaxSize) +
-                    " != " + std::to_string(ClassesFunc[len - 1]) + "\n\n";
+    manipMessage += "Largest size (" + std::to_string(ClassesFunc[len - 1]) +
+                    ") - SizeDelta (" + std::to_string(Config::SizeDelta) +
+                    ") != MaxSize (" + std::to_string(MaxSize) + ")\n\n";
     return false;
   }
   // Verify MidSizeLog is greater than MinSizeLog.

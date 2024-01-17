@@ -328,6 +328,7 @@ cc_test {
 
 cc_binary {
     name: "size_map_gen",
+    defaults: ["scudo_config_defaults"],
     host_supported: true,
     static_libs: ["libscudo"],
     include_dirs: [
