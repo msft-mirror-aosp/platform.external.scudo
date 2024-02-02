@@ -105,7 +105,6 @@ cc_defaults {
         "-fno-rtti",
         // This option speeds up alloc/free code paths by about 5% to 7%.
         "-fno-stack-protector",
-        "-fno-emulated-tls",
 
         "-Wall",
         "-Wextra",
@@ -203,6 +202,9 @@ cc_library_static {
       "//frameworks/libs/native_bridge_support/libc:__subpackages__",
       "//system/core/debuggerd:__subpackages__",
     ],
+    apex_available: [
+        "com.android.runtime",
+    ],
 }
 
 cc_library_static {
@@ -223,7 +225,6 @@ cc_defaults {
         "external/scudo/standalone/include",
     ],
     cflags: [
-        "-fno-emulated-tls",
         "-Wconversion",
         // In memtag_test.cpp, some tests are disabled by GTEST_SKIP() so that
         // they won't be run. However, for those disabled tests, it may contain
@@ -327,6 +328,7 @@ cc_test {
 
 cc_binary {
     name: "size_map_gen",
+    defaults: ["scudo_config_defaults"],
     host_supported: true,
     static_libs: ["libscudo"],
     include_dirs: [
