@@ -62,8 +62,7 @@ class StackDepot {
   // This is achieved by re-checking the hash of the stack trace before
   // returning the trace.
 
-#ifdef SCUDO_FUZZ
-  // Use smaller table sizes for fuzzing in order to reduce input size.
+#if SCUDO_SMALL_STACK_DEPOT
   static const uptr TabBits = 4;
 #else
   static const uptr TabBits = 16;
@@ -72,7 +71,7 @@ class StackDepot {
   static const uptr TabMask = TabSize - 1;
   atomic_u32 Tab[TabSize] = {};
 
-#ifdef SCUDO_FUZZ
+#if SCUDO_SMALL_STACK_DEPOT
   static const uptr RingBits = 4;
 #else
   static const uptr RingBits = 19;
@@ -137,6 +136,13 @@ public:
   u64 operator[](uptr RingPos) const {
     return atomic_load_relaxed(&Ring[RingPos & RingMask]);
   }
+
+  // This is done for the purpose of fork safety in multithreaded programs and
+  // does not fully disable StackDepot. In particular, find() still works and
+  // only insert() is blocked.
+  void disable() NO_THREAD_SAFETY_ANALYSIS { RingEndMu.lock(); }
+
+  void enable() NO_THREAD_SAFETY_ANALYSIS { RingEndMu.unlock(); }
 };
 
 } // namespace scudo
