@@ -63,9 +63,9 @@ class alignas(atomic_u64) StackDepot {
   // This is achieved by re-checking the hash of the stack trace before
   // returning the trace.
 
-  uptr RingSize = 0;
-  uptr RingMask = 0;
-  uptr TabMask = 0;
+  u32 RingSize = 0;
+  u32 RingMask = 0;
+  u32 TabMask = 0;
   // This is immediately followed by RingSize atomic_u64 and
   // (TabMask + 1) atomic_u32.
 
@@ -92,7 +92,7 @@ class alignas(atomic_u64) StackDepot {
   }
 
 public:
-  void init(uptr RingSz, uptr TabSz) {
+  void init(u32 RingSz, u32 TabSz) {
     DCHECK(isPowerOfTwo(RingSz));
     DCHECK(isPowerOfTwo(TabSz));
     RingSize = RingSz;
@@ -103,8 +103,6 @@ public:
   // Ensure that RingSize, RingMask and TabMask are set up in a way that
   // all accesses are within range of BufSize.
   bool isValid(uptr BufSize) const {
-    if (RingSize > UINTPTR_MAX / sizeof(atomic_u64))
-      return false;
     if (RingSize == 0 || !isPowerOfTwo(RingSize))
       return false;
     uptr RingBytes = sizeof(atomic_u64) * RingSize;
@@ -112,8 +110,6 @@ public:
       return false;
 
     if (TabMask == 0)
-      return false;
-    if ((TabMask - 1) > UINTPTR_MAX / sizeof(atomic_u32))
       return false;
     uptr TabSize = TabMask + 1;
     if (!isPowerOfTwo(TabSize))
