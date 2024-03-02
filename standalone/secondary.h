@@ -114,14 +114,7 @@ public:
   }
 };
 
-/*
- * On Trusty we want to avoid splitting page-aligned allocations into
- * multiple mappings, because it prevents using the allocation for memref.
- * Using only 1 tagged page at the start of the allocation prevents
- * reusing the mapping for slightly smaller allocations, but since Trusty
- * uses MapAllocatorNoCache, it wouldn't reuse anyway.
- */
-static const uptr MaxUnusedCachePages = SCUDO_TRUSTY ? 1U : 4U;
+static const uptr MaxUnusedCachePages = 4U;
 
 template <typename Config>
 bool mapSecondary(const Options &Options, uptr CommitBase, uptr CommitSize,
