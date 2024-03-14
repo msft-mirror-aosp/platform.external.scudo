@@ -251,6 +251,7 @@ cc_test {
     defaults: ["scudo_unit_tests_default"],
     host_supported: true,
     srcs: [
+        "standalone/tests/allocator_config_test.cpp",
         "standalone/tests/atomic_test.cpp",
         "standalone/tests/bytemap_test.cpp",
         "standalone/tests/checksum_test.cpp",
