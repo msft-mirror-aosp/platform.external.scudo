@@ -133,7 +133,7 @@ struct AndroidNormalConfig {
   template <typename Config> using SecondaryT = MapAllocator<Config>;
 };
 
-struct AndroidSvelteConfig {
+struct AndroidLowMemoryConfig {
 #if defined(__aarch64__)
   static const bool MaySupportMemoryTagging = true;
 #else
@@ -173,8 +173,8 @@ struct AndroidSvelteConfig {
   template <typename Config> using SecondaryT = MapAllocator<Config>;
 };
 
-#if defined(SVELTE_ENABLED)
-typedef AndroidSvelteConfig Config;
+#if defined(SCUDO_LOW_MEMORY)
+typedef AndroidLowMemoryConfig Config;
 #else
 typedef AndroidNormalConfig Config;
 #endif

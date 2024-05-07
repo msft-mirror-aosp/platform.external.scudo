@@ -33,9 +33,10 @@
 
 #include "allocator_config.h"
 
-#if defined(SVELTE_CHECK)
-static_assert(std::is_same<scudo::Config, scudo::AndroidSvelteConfig>() == true,
-              "Svelte is enabled, but AndroidSvelteConfig is not the default");
+#if defined(SCUDO_LOW_MEMORY_CHECK)
+static_assert(
+    std::is_same<scudo::Config, scudo::AndroidLowMemoryConfig>() == true,
+    "Low Memory is enabled, but AndroidLowMemoryConfig is not the default");
 #else
 static_assert(std::is_same<scudo::Config, scudo::AndroidNormalConfig>() == true,
               "Not using AndrodNormalConfig as the default");
