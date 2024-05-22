@@ -71,9 +71,6 @@ cc_defaults {
     cflags: [
         // Use a custom Android configuration.
         "-DSCUDO_USE_CUSTOM_CONFIG",
-
-        // Enable the svelte config by default.
-        "-DSVELTE_ENABLED",
     ],
 
     include_dirs: [
@@ -81,8 +78,8 @@ cc_defaults {
     ],
 
     product_variables: {
-        malloc_not_svelte: {
-            cflags: ["-USVELTE_ENABLED"],
+        malloc_low_memory: {
+            cflags: ["-DSCUDO_LOW_MEMORY"],
         },
     },
 }
@@ -347,15 +344,13 @@ cc_defaults {
     host_supported: true,
     srcs: ["config/config_build_check.cpp"],
 
-    cflags: ["-DSVELTE_CHECK"],
-
     include_dirs: [
         "external/scudo/standalone",
     ],
 
     product_variables: {
-        malloc_not_svelte: {
-            cflags: ["-USVELTE_CHECK"],
+        malloc_low_memory: {
+            cflags: ["-DSCUDO_LOW_MEMORY_CHECK"],
         },
     },
 }
