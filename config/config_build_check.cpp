@@ -33,13 +33,20 @@
 
 #include "allocator_config.h"
 
+#if defined(__ANDROID__)
+
 #if defined(SCUDO_LOW_MEMORY_CHECK)
 static_assert(
     std::is_same<scudo::Config, scudo::AndroidLowMemoryConfig>() == true,
     "Low Memory is enabled, but AndroidLowMemoryConfig is not the default");
 #else
 static_assert(std::is_same<scudo::Config, scudo::AndroidNormalConfig>() == true,
-              "Not using AndrodNormalConfig as the default");
+              "Not using AndrodNormalConfig as the Android default");
+#endif
+
+#else
+static_assert(std::is_same<scudo::Config, scudo::HostConfig>() == true,
+              "Not using HostConfig as the default");
 #endif
 
 static_assert(std::is_same<scudo::Config, scudo::DefaultConfig>() == true,
