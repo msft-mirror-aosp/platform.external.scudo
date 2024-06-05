@@ -48,6 +48,7 @@ license {
 
 cc_library_headers {
     name: "scudo_headers",
+    ramdisk_available: true,
     recovery_available: true,
     vendor_ramdisk_available: true,
 
@@ -57,6 +58,7 @@ cc_library_headers {
 
     apex_available: [
         "com.android.runtime",
+        "//apex_available:platform",
     ],
 
     visibility: [
@@ -65,7 +67,26 @@ cc_library_headers {
 }
 
 cc_defaults {
+    name: "scudo_config_defaults",
+    cflags: [
+        // Use a custom Android configuration.
+        "-DSCUDO_USE_CUSTOM_CONFIG",
+    ],
+
+    include_dirs: [
+        "external/scudo/config",
+    ],
+
+    product_variables: {
+        malloc_low_memory: {
+            cflags: ["-DSCUDO_LOW_MEMORY"],
+        },
+    },
+}
+
+cc_defaults {
     name: "libscudo_defaults",
+    defaults: ["scudo_config_defaults"],
     native_coverage: false,
     ramdisk_available: true,
     vendor_ramdisk_available: true,
@@ -81,27 +102,18 @@ cc_defaults {
         "-fno-rtti",
         // This option speeds up alloc/free code paths by about 5% to 7%.
         "-fno-stack-protector",
-        "-fno-emulated-tls",
 
         "-Wall",
         "-Wextra",
         "-Wunused",
         "-Wno-unused-result",
+        "-Wconversion",
 
         "-Werror=pointer-to-int-cast",
         "-Werror=int-to-pointer-cast",
         "-Werror=thread-safety",
         "-Werror=type-limits",
         "-Werror",
-
-        // Always force alignment to 16 bytes even on 32 bit.
-        // Android assumes that allocations of multiples of 16 bytes
-        // will be aligned to at least 16 bytes.
-        "-DSCUDO_MIN_ALIGNMENT_LOG=4",
-
-        // Allow scudo to use android_unsafe_frame_pointer_chase(), which is
-        // normally a private function.
-        "-DHAVE_ANDROID_UNSAFE_FRAME_POINTER_CHASE",
     ],
     cppflags: [
         "-nostdinc++",
@@ -115,16 +127,17 @@ cc_defaults {
     srcs: [
         "standalone/checksum.cpp",
         "standalone/common.cpp",
+        "standalone/condition_variable_linux.cpp",
         "standalone/flags.cpp",
         "standalone/flags_parser.cpp",
         "standalone/linux.cpp",
         "standalone/mem_map.cpp",
+        "standalone/mem_map_linux.cpp",
         "standalone/release.cpp",
         "standalone/report.cpp",
-        "standalone/rss_limit_checker.cpp",
+        "standalone/report_linux.cpp",
         "standalone/string_utils.cpp",
         "standalone/timing.cpp",
-        "standalone/wrappers_c_bionic.cpp"
     ],
     arch: {
         arm: {
@@ -157,24 +170,55 @@ cc_defaults {
                 "libc_headers",
                 "bionic_libc_platform_headers",
             ],
+            srcs: ["standalone/wrappers_c_bionic.cpp"],
+            cflags: [
+                "-D_BIONIC=1",
+
+                // Indicate that bionic has reserved a TLS for Scudo.
+                "-DSCUDO_HAS_PLATFORM_TLS_SLOT",
+
+                // Always force alignment to 16 bytes even on 32 bit.
+                // Android assumes that allocations of multiples of 16 bytes
+                // will be aligned to at least 16 bytes.
+                "-DSCUDO_MIN_ALIGNMENT_LOG=4",
+
+                // Allow scudo to use android_unsafe_frame_pointer_chase(),
+                // which is normally a private function.
+                "-DHAVE_ANDROID_UNSAFE_FRAME_POINTER_CHASE",
+            ],
         },
         native_bridge: {
             cflags: ["-DSCUDO_DISABLE_TBI"],
         },
+        host: {
+            srcs: ["standalone/wrappers_c.cpp"],
+        },
     },
 }
 
-cc_library_static {
+cc_library {
     name: "libscudo",
     defaults: ["libscudo_defaults"],
-    cflags: [
-      "-D_BIONIC=1",
-      "-DSCUDO_HAS_PLATFORM_TLS_SLOT",
-    ],
     visibility: [
       "//bionic:__subpackages__",
-      "//frameworks/libs/native_bridge_support/libc:__subpackages__",
+      "//build/kati:__subpackages__",
+      "//frameworks/libs/native_bridge_support/android_api/libc:__subpackages__",
+      "//external/ninja:__subpackages__",
+      "//external/stg:__subpackages__",
       "//system/core/debuggerd:__subpackages__",
+    ],
+    shared: {
+        enabled: false,
+    },
+    target: {
+        host: {
+            shared: {
+                enabled: true,
+            },
+        },
+    },
+    apex_available: [
+        "com.android.runtime",
     ],
 }
 
@@ -188,20 +232,22 @@ cc_library_static {
 
 cc_defaults {
     name: "scudo_unit_tests_default",
+    defaults: ["scudo_config_defaults"],
+    isolated: true,
     static_libs: ["libscudo_for_testing"],
     include_dirs: [
         "external/scudo/standalone",
         "external/scudo/standalone/include",
     ],
     cflags: [
-        "-fno-emulated-tls",
+        "-Wconversion",
         // In memtag_test.cpp, some tests are disabled by GTEST_SKIP() so that
         // they won't be run. However, for those disabled tests, it may contain
         // unreachable code paths which will mislead some compiler checks. Given
         // this flag won't be impacted too much, disable it only in the test.
         "-Wno-unreachable-code-loop-increment",
-        "-Wno-unused-parameter",
         "-DSCUDO_DEBUG",
+        "-DSCUDO_NO_TEST_MAIN",
     ],
     target: {
         bionic: {
@@ -210,20 +256,23 @@ cc_defaults {
     },
     test_suites: ["general-tests"],
     bootstrap: true,
+    srcs: [
+        "standalone/tests/scudo_unit_test_main.cpp",
+    ],
 }
 
 cc_test {
     name: "scudo_unit_tests",
     defaults: ["scudo_unit_tests_default"],
-    // Temporarily disabled on host due to a 15-20s per-test timeout,
-    // which is currently exceeded by ScudoCombinedTest.BasicCombined.
-    host_supported: false,
+    host_supported: true,
     srcs: [
+        "standalone/tests/allocator_config_test.cpp",
         "standalone/tests/atomic_test.cpp",
         "standalone/tests/bytemap_test.cpp",
         "standalone/tests/checksum_test.cpp",
         "standalone/tests/chunk_test.cpp",
         "standalone/tests/combined_test.cpp",
+        "standalone/tests/condition_variable_test.cpp",
         "standalone/tests/flags_test.cpp",
         "standalone/tests/list_test.cpp",
         "standalone/tests/map_test.cpp",
@@ -233,7 +282,6 @@ cc_test {
         "standalone/tests/quarantine_test.cpp",
         "standalone/tests/release_test.cpp",
         "standalone/tests/report_test.cpp",
-        "standalone/tests/scudo_unit_test_main.cpp",
         "standalone/tests/secondary_test.cpp",
         "standalone/tests/size_class_map_test.cpp",
         "standalone/tests/stats_test.cpp",
@@ -245,12 +293,17 @@ cc_test {
 }
 
 cc_test {
-    name: "scudo_hooks_unit_tests",
+    name: "scudo_wrappers_unit_tests",
     defaults: ["scudo_unit_tests_default"],
-    host_supported: true,
+    // These are wrapper tests, disable the host tests since they would run
+    // against glibc.
+    host_supported: false,
+    cflags: [
+        "-Wno-mismatched-new-delete",
+    ],
     srcs: [
-      "standalone/tests/scudo_hooks_test.cpp",
-      "standalone/tests/scudo_unit_test_main.cpp",
+        "standalone/tests/wrappers_c_test.cpp",
+        "standalone/tests/wrappers_cpp_test.cpp",
     ],
 }
 
@@ -270,4 +323,59 @@ cc_fuzz {
     fuzz_config: {
         componentid: 87896
     },
+}
+
+cc_test {
+    name: "size_map_verify_unit_tests",
+    host_supported: true,
+    static_libs: ["libscudo"],
+
+    include_dirs: [
+        "external/scudo/android/tools",
+        "external/scudo/standalone",
+        "external/scudo/standalone/include",
+        "external/scudo/standalone/tools",
+    ],
+    srcs: [
+        "android/tests/size_map_verify_unit_tests.cpp",
+    ],
+}
+
+cc_binary {
+    name: "size_map_gen",
+    defaults: ["scudo_config_defaults"],
+    host_supported: true,
+    static_libs: ["libscudo"],
+    include_dirs: [
+        "external/scudo/android/tools",
+        "external/scudo/standalone",
+        "external/scudo/standalone/include",
+    ],
+    srcs: ["android/tools/size_map_gen.cpp"],
+}
+
+// The targets below verify that all configuration is set up properly for
+// the library or tests.
+cc_defaults {
+    name: "scudo_verify_defaults",
+    host_supported: true,
+    srcs: ["config/config_build_check.cpp"],
+
+    include_dirs: [
+        "external/scudo/standalone",
+    ],
+
+    product_variables: {
+        malloc_low_memory: {
+            cflags: ["-DSCUDO_LOW_MEMORY_CHECK"],
+        },
+    },
+}
+
+cc_test {
+    name: "scudo_verify_config",
+    defaults: [
+        "scudo_verify_defaults",
+        "scudo_unit_tests_default",
+    ],
 }
