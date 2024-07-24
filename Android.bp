@@ -71,9 +71,6 @@ cc_defaults {
     cflags: [
         // Use a custom Android configuration.
         "-DSCUDO_USE_CUSTOM_CONFIG",
-
-        // Enable the svelte config by default.
-        "-DSVELTE_ENABLED",
     ],
 
     include_dirs: [
@@ -81,8 +78,8 @@ cc_defaults {
     ],
 
     product_variables: {
-        malloc_not_svelte: {
-            cflags: ["-USVELTE_ENABLED"],
+        malloc_low_memory: {
+            cflags: ["-DSCUDO_LOW_MEMORY"],
         },
     },
 }
@@ -117,15 +114,6 @@ cc_defaults {
         "-Werror=thread-safety",
         "-Werror=type-limits",
         "-Werror",
-
-        // Always force alignment to 16 bytes even on 32 bit.
-        // Android assumes that allocations of multiples of 16 bytes
-        // will be aligned to at least 16 bytes.
-        "-DSCUDO_MIN_ALIGNMENT_LOG=4",
-
-        // Allow scudo to use android_unsafe_frame_pointer_chase(), which is
-        // normally a private function.
-        "-DHAVE_ANDROID_UNSAFE_FRAME_POINTER_CHASE",
     ],
     cppflags: [
         "-nostdinc++",
@@ -150,7 +138,6 @@ cc_defaults {
         "standalone/report_linux.cpp",
         "standalone/string_utils.cpp",
         "standalone/timing.cpp",
-        "standalone/wrappers_c_bionic.cpp"
     ],
     arch: {
         arm: {
@@ -183,25 +170,53 @@ cc_defaults {
                 "libc_headers",
                 "bionic_libc_platform_headers",
             ],
+            srcs: ["standalone/wrappers_c_bionic.cpp"],
+            cflags: [
+                "-D_BIONIC=1",
+
+                // Indicate that bionic has reserved a TLS for Scudo.
+                "-DSCUDO_HAS_PLATFORM_TLS_SLOT",
+
+                // Always force alignment to 16 bytes even on 32 bit.
+                // Android assumes that allocations of multiples of 16 bytes
+                // will be aligned to at least 16 bytes.
+                "-DSCUDO_MIN_ALIGNMENT_LOG=4",
+
+                // Allow scudo to use android_unsafe_frame_pointer_chase(),
+                // which is normally a private function.
+                "-DHAVE_ANDROID_UNSAFE_FRAME_POINTER_CHASE",
+            ],
         },
         native_bridge: {
             cflags: ["-DSCUDO_DISABLE_TBI"],
         },
+        host: {
+            srcs: ["standalone/wrappers_c.cpp"],
+        },
     },
 }
 
-cc_library_static {
+cc_library {
     name: "libscudo",
     defaults: ["libscudo_defaults"],
-    cflags: [
-      "-D_BIONIC=1",
-      "-DSCUDO_HAS_PLATFORM_TLS_SLOT",
-    ],
     visibility: [
       "//bionic:__subpackages__",
+      "//build/kati:__subpackages__",
       "//frameworks/libs/native_bridge_support/android_api/libc:__subpackages__",
+      "//external/ninja:__subpackages__",
+      "//external/stg:__subpackages__",
       "//system/core/debuggerd:__subpackages__",
     ],
+    shared: {
+        enabled: false,
+    },
+    target: {
+        host: {
+            shared: {
+                enabled: true,
+            },
+        },
+    },
     apex_available: [
         "com.android.runtime",
     ],
@@ -251,6 +266,7 @@ cc_test {
     defaults: ["scudo_unit_tests_default"],
     host_supported: true,
     srcs: [
+        "standalone/tests/allocator_config_test.cpp",
         "standalone/tests/atomic_test.cpp",
         "standalone/tests/bytemap_test.cpp",
         "standalone/tests/checksum_test.cpp",
@@ -323,7 +339,6 @@ cc_test {
     srcs: [
         "android/tests/size_map_verify_unit_tests.cpp",
     ],
-
 }
 
 cc_binary {
@@ -346,29 +361,13 @@ cc_defaults {
     host_supported: true,
     srcs: ["config/config_build_check.cpp"],
 
-    cflags: ["-DSVELTE_CHECK"],
-
     include_dirs: [
         "external/scudo/standalone",
     ],
 
     product_variables: {
-        malloc_not_svelte: {
-            cflags: ["-USVELTE_CHECK"],
-        },
-    },
-}
-
-cc_library {
-    name: "libscudo_verify_config",
-    stl: "libc++",
-    defaults: [
-        "scudo_verify_defaults",
-        "libscudo_defaults",
-    ],
-    target: {
-        bionic: {
-            system_shared_libs: ["libc"],
+        malloc_low_memory: {
+            cflags: ["-DSCUDO_LOW_MEMORY_CHECK"],
         },
     },
 }
