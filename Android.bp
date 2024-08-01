@@ -200,12 +200,12 @@ cc_library {
     name: "libscudo",
     defaults: ["libscudo_defaults"],
     visibility: [
-      "//bionic:__subpackages__",
-      "//build/kati:__subpackages__",
-      "//frameworks/libs/native_bridge_support/android_api/libc:__subpackages__",
-      "//external/ninja:__subpackages__",
-      "//external/stg:__subpackages__",
-      "//system/core/debuggerd:__subpackages__",
+        "//bionic:__subpackages__",
+        "//build/kati:__subpackages__",
+        "//frameworks/libs/native_bridge_support/android_api/libc:__subpackages__",
+        "//external/ninja:__subpackages__",
+        "//external/stg:__subpackages__",
+        "//system/core/debuggerd:__subpackages__",
     ],
     shared: {
         enabled: false,
@@ -321,7 +321,7 @@ cc_fuzz {
     ],
     srcs: ["standalone/fuzz/get_error_info_fuzzer.cpp"],
     fuzz_config: {
-        componentid: 87896
+        componentid: 87896,
     },
 }
 
