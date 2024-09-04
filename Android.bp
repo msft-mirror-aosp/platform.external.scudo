@@ -85,8 +85,28 @@ cc_defaults {
 }
 
 cc_defaults {
+    name: "scudo_warning_defaults",
+    cflags: [
+        "-Wall",
+        "-Wextra",
+        "-Wunused",
+        "-Wno-unused-result",
+        "-Wconversion",
+
+        "-Werror=pointer-to-int-cast",
+        "-Werror=int-to-pointer-cast",
+        "-Werror=thread-safety",
+        "-Werror=type-limits",
+        "-Werror",
+    ],
+}
+
+cc_defaults {
     name: "libscudo_defaults",
-    defaults: ["scudo_config_defaults"],
+    defaults: [
+        "scudo_config_defaults",
+        "scudo_warning_defaults",
+    ],
     native_coverage: false,
     ramdisk_available: true,
     vendor_ramdisk_available: true,
@@ -102,18 +122,6 @@ cc_defaults {
         "-fno-rtti",
         // This option speeds up alloc/free code paths by about 5% to 7%.
         "-fno-stack-protector",
-
-        "-Wall",
-        "-Wextra",
-        "-Wunused",
-        "-Wno-unused-result",
-        "-Wconversion",
-
-        "-Werror=pointer-to-int-cast",
-        "-Werror=int-to-pointer-cast",
-        "-Werror=thread-safety",
-        "-Werror=type-limits",
-        "-Werror",
     ],
     cppflags: [
         "-nostdinc++",
@@ -232,7 +240,10 @@ cc_library_static {
 
 cc_defaults {
     name: "scudo_unit_tests_default",
-    defaults: ["scudo_config_defaults"],
+    defaults: [
+        "scudo_config_defaults",
+        "scudo_warning_defaults",
+    ],
     isolated: true,
     static_libs: ["libscudo_for_testing"],
     include_dirs: [
@@ -240,7 +251,6 @@ cc_defaults {
         "external/scudo/standalone/include",
     ],
     cflags: [
-        "-Wconversion",
         // In memtag_test.cpp, some tests are disabled by GTEST_SKIP() so that
         // they won't be run. However, for those disabled tests, it may contain
         // unreachable code paths which will mislead some compiler checks. Given
