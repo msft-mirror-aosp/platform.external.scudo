@@ -220,6 +220,13 @@ struct AndroidLowMemoryConfig {
 
 #if defined(__ANDROID__)
 
+#include <unistd.h>
+
+#if defined(PAGE_SIZE)
+// This is to guarantee that the getPageSizeCached() function is constexpr.
+static_assert(getPageSizeCached() != 0, "getPageSizeCached() is zero");
+#endif
+
 #if defined(SCUDO_LOW_MEMORY)
 typedef AndroidLowMemoryConfig Config;
 #else
