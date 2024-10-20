@@ -389,3 +389,9 @@ cc_test {
         "scudo_unit_tests_default",
     ],
 }
+
+dirgroup {
+    name: "trusty_dirgroup_external_scudo",
+    dirs: ["."],
+    visibility: ["//trusty/vendor/google/aosp/scripts"],
+}
