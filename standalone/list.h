@@ -10,7 +10,17 @@
 #define SCUDO_LIST_H_
 
 #include "internal_defs.h"
-#include "type_traits.h"
+
+// TODO: Move the helpers to a header.
+namespace {
+template <typename T> struct isPointer {
+  static constexpr bool value = false;
+};
+
+template <typename T> struct isPointer<T *> {
+  static constexpr bool value = true;
+};
+} // namespace
 
 namespace scudo {
 
@@ -48,11 +58,10 @@ public:
 
 template <class T> class LinkOp<T, /*LinkWithPtr=*/false> {
 public:
-  using LinkTy = typename assertSameType<
-      typename removeConst<decltype(T::Next)>::type,
-      typename removeConst<decltype(T::EndOfListVal)>::type>::type;
+  using LinkTy = decltype(T::Next);
 
   LinkOp() = default;
+  // TODO: Check if the `BaseSize` can fit in `Size`.
   LinkOp(T *BaseT, uptr BaseSize)
       : Base(BaseT), Size(static_cast<LinkTy>(BaseSize)) {}
   void init(T *LinkBase, uptr BaseSize) {
@@ -71,12 +80,11 @@ public:
   }
   // Set `X->Next` to `Next`.
   void setNext(T *X, T *Next) const {
-    if (Next == nullptr) {
+    // TODO: Check if the offset fits in the size of `LinkTy`.
+    if (Next == nullptr)
       X->Next = getEndOfListVal();
-    } else {
-      DCHECK_LE(static_cast<LinkTy>(Next - Base), Size);
+    else
       X->Next = static_cast<LinkTy>(Next - Base);
-    }
   }
 
   T *getPrev(T *X) const {
@@ -96,6 +104,7 @@ public:
       X->Prev = static_cast<LinkTy>(Prev - Base);
   }
 
+  // TODO: `LinkTy` should be the same as decltype(T::EndOfListVal).
   LinkTy getEndOfListVal() const { return T::EndOfListVal; }
 
 protected:
