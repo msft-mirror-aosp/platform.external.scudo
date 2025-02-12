@@ -124,6 +124,10 @@ struct HostConfig {
       static const s32 DefaultReleaseToOsIntervalMs = 10000;
     };
     template <typename Config> using CacheT = MapAllocatorCache<Config>;
+#if !defined(__LP64__)
+    // Do not use guard pages on 32 bit due to limited VA space.
+    static const bool EnableGuardPages = false;
+#endif
   };
 
   template <typename Config> using SecondaryT = MapAllocator<Config>;
@@ -173,6 +177,10 @@ struct AndroidNormalConfig {
       static const s32 DefaultReleaseToOsIntervalMs = 0;
     };
     template <typename Config> using CacheT = MapAllocatorCache<Config>;
+#if !defined(__LP64__)
+    // Do not use guard pages on 32 bit due to limited VA space.
+    static const bool EnableGuardPages = false;
+#endif
   };
 
   template <typename Config> using SecondaryT = MapAllocator<Config>;
@@ -213,6 +221,10 @@ struct AndroidLowMemoryConfig {
   struct Secondary {
     // TODO(cferris): After secondary caching tuned, re-add a cache config.
     template <typename Config> using CacheT = MapAllocatorNoCache<Config>;
+#if !defined(__LP64__)
+    // Do not use guard pages on 32 bit due to limited VA space.
+    static const bool EnableGuardPages = false;
+#endif
   };
 
   template <typename Config> using SecondaryT = MapAllocator<Config>;
