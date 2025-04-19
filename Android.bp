@@ -258,6 +258,9 @@ cc_defaults {
         "-Wno-unreachable-code-loop-increment",
         "-DSCUDO_DEBUG=1",
         "-DSCUDO_NO_TEST_MAIN",
+        // Fortify might interfere with the expectations of the Scudo tests,
+        // so disable fortify.
+        "-U_FORTIFY_SOURCE",
     ],
     target: {
         bionic: {
