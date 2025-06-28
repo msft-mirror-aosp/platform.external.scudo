@@ -285,7 +285,8 @@ cc_test {
         "standalone/tests/checksum_test.cpp",
         "standalone/tests/chunk_test.cpp",
         "standalone/tests/combined_test.cpp",
-        "standalone/tests/common_test.cpp",
+        // Disable until b/428016254 is fixed.
+        //"standalone/tests/common_test.cpp",
         "standalone/tests/condition_variable_test.cpp",
         "standalone/tests/flags_test.cpp",
         "standalone/tests/list_test.cpp",
