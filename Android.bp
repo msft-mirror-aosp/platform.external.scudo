@@ -314,6 +314,9 @@ cc_test {
     // against glibc.
     host_supported: false,
     cflags: [
+        // Do not optimize the test code to avoid removing a call that is being
+        // tested.
+        "-O0",
         "-Wno-mismatched-new-delete",
     ],
     srcs: [
