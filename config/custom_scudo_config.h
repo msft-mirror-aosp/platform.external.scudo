@@ -116,7 +116,7 @@ struct HostConfig {
   struct Secondary {
     struct Cache {
       static const u32 EntriesArraySize = 1024U;
-      static const u32 QuarantineSize = 32U;
+      static const u32 QuarantineSize = 0U;
       static const u32 DefaultMaxEntriesCount = 1024U;
       static const uptr DefaultMaxEntrySize = 1UL << 30;
       static const s32 MinReleaseToOsIntervalMs = -1;
@@ -169,7 +169,7 @@ struct AndroidNormalConfig {
   struct Secondary {
     struct Cache {
       static const u32 EntriesArraySize = 256U;
-      static const u32 QuarantineSize = 32U;
+      static const u32 QuarantineSize = 0U;
       static const u32 DefaultMaxEntriesCount = 32U;
       static const uptr DefaultMaxEntrySize = 2UL << 20;
       static const s32 MinReleaseToOsIntervalMs = -1;
