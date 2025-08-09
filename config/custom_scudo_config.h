@@ -86,6 +86,8 @@ static_assert(AndroidNormalSizeClassMap::usesCompressedLSBFormat(), "");
 
 struct HostConfig {
   static const bool MaySupportMemoryTagging = false;
+  // Compile out all of the quarantine code since it's not actually used.
+  static const bool QuarantineDisabled = true;
 
   template <class A> using TSDRegistryT = TSDRegistryExT<A>; // Exclusive TSD
 
@@ -139,6 +141,9 @@ struct AndroidNormalConfig {
 #else
   static const bool MaySupportMemoryTagging = false;
 #endif
+  // Compile out all of the quarantine code since it's not actually used.
+  static const bool QuarantineDisabled = true;
+
   template <class A>
   using TSDRegistryT = TSDRegistrySharedT<A, 8U, 2U>; // Shared, max 8 TSDs.
 
@@ -192,6 +197,9 @@ struct AndroidLowMemoryConfig {
 #else
   static const bool MaySupportMemoryTagging = false;
 #endif
+  // Compile out all of the quarantine code since it's not actually used.
+  static const bool QuarantineDisabled = true;
+
   template <class A> using TSDRegistryT = TSDRegistrySharedT<A, 1U, 1U>;
 
   struct Primary {
