@@ -224,6 +224,15 @@ cc_library {
                 enabled: true,
             },
         },
+        bionic: {
+            cflags: [
+                // Only enable tracing for the libc part of the library.
+                "-DSCUDO_ENABLE_TRACING",
+            ],
+            include_dirs: [
+                "bionic/libc",
+            ],
+        },
     },
     apex_available: [
         "com.android.runtime",

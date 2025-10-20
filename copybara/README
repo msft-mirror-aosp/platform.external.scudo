@@ -5,10 +5,16 @@ Internal copybara documentation:
 
 go/copybara
 
-Command used to initialize the repo:
+An internal process now automatically imports changes using copybara. The
+import command runs very frequently, so any upstream changes are usually
+triggered within an hour.
 
-copybara --init-history --ignore-noop --squash --squash-skip-history copybara/copy.bara.sky
+The internal config file is:
 
-Run this command to import changes when scudo upstream changes:
+wireless/android/memory_safety/copybara/scudo/copy.bara.sky
 
-copybara copybara/copy.bara.sky
+To manually trigger a copybara run execute:
+
+/google/bin/releases/copybara/public/copybara/copybara service trigger /google/src/head/depot/google3/wireless/android/memory_safety/copybara/scudo/copy.bara.sky default
+
+See go/copybara-service-commands#trigger for more information.
