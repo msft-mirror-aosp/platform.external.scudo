@@ -136,6 +136,7 @@ struct HostConfig {
 };
 
 struct AndroidNormalConfig {
+  static const bool ExactUsableSize = false;
 #if defined(__aarch64__)
   static const bool MaySupportMemoryTagging = true;
 #else
