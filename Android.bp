@@ -106,6 +106,7 @@ cc_defaults {
     defaults: [
         "scudo_config_defaults",
         "scudo_warning_defaults",
+        "x86_disable_fdo_profile_sample_accurate",
     ],
     native_coverage: false,
     ramdisk_available: true,
