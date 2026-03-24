@@ -35,9 +35,9 @@
 
 static inline const char *
 GetReleaseToOSTraceName(scudo::ReleaseToOS ReleaseType) {
-  static const char *Names[] = {"Scudo releaseToOS normal",
-                                "Scudo releaseToOS force",
-                                "Scudo releaseToOS forceall"};
+  static const char *Names[] = {
+      "Scudo releaseToOS normal", "Scudo releaseToOS force",
+      "Scudo releaseToOS forceall", "Scudo releaseToOS forcefast"};
 
   return Names[static_cast<size_t>(ReleaseType)];
 }
@@ -46,7 +46,8 @@ static inline const char *
 GetPrimaryReleaseToOSTraceName(scudo::ReleaseToOS ReleaseType) {
   static const char *Names[] = {"Scudo primary releaseToOS normal",
                                 "Scudo primary releaseToOS force",
-                                "Scudo primary releaseToOS forceall"};
+                                "Scudo primary releaseToOS forceall",
+                                "Scudo primary releaseToOS forcefast"};
 
   return Names[static_cast<size_t>(ReleaseType)];
 }
@@ -55,7 +56,8 @@ static inline const char *
 GetPrimaryReleaseToOSMaybeTraceName(scudo::ReleaseToOS ReleaseType) {
   static const char *Names[] = {"Scudo primary releaseToOSMaybe normal",
                                 "Scudo primary releaseToOSMaybe force",
-                                "Scudo primary releaseToOSMaybe forceall"};
+                                "Scudo primary releaseToOSMaybe forceall",
+                                "Scudo primary releaseToOSMaybe forcefast"};
 
   return Names[static_cast<size_t>(ReleaseType)];
 }
@@ -64,7 +66,8 @@ static inline const char *
 GetSecondaryReleaseToOSTraceName(scudo::ReleaseToOS ReleaseType) {
   static const char *Names[] = {"Scudo secondary releaseToOS normal",
                                 "Scudo secondary releaseToOS force",
-                                "Scudo secondary releaseToOS forceall"};
+                                "Scudo secondary releaseToOS forceall",
+                                "Scudo secondary releaseToOS forcefast"};
 
   return Names[static_cast<size_t>(ReleaseType)];
 }
