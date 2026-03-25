@@ -88,6 +88,10 @@ struct HostConfig {
   static const bool MaySupportMemoryTagging = false;
   // Compile out all of the quarantine code since it's not actually used.
   static const bool QuarantineDisabled = true;
+  // Disable all type/size/alignment checks.
+  static const bool AbortOnDeallocTypeMismatch = false;
+  static const bool AbortOnDeallocSizeMismatch = false;
+  static const bool AbortOnDeallocAlignmentMismatch = false;
 
   template <class A> using TSDRegistryT = TSDRegistryExT<A>; // Exclusive TSD
 
@@ -143,6 +147,10 @@ struct AndroidNormalConfig {
 #endif
   // Compile out all of the quarantine code since it's not actually used.
   static const bool QuarantineDisabled = true;
+  // Disable all type/size/alignment checks.
+  static const bool AbortOnDeallocTypeMismatch = false;
+  static const bool AbortOnDeallocSizeMismatch = false;
+  static const bool AbortOnDeallocAlignmentMismatch = false;
 
   template <class A>
   using TSDRegistryT = TSDRegistrySharedT<A, 8U, 2U>; // Shared, max 8 TSDs.
@@ -199,6 +207,10 @@ struct AndroidLowMemoryConfig {
 #endif
   // Compile out all of the quarantine code since it's not actually used.
   static const bool QuarantineDisabled = true;
+  // Disable all type/size/alignment checks.
+  static const bool AbortOnDeallocTypeMismatch = false;
+  static const bool AbortOnDeallocSizeMismatch = false;
+  static const bool AbortOnDeallocAlignmentMismatch = false;
 
   template <class A> using TSDRegistryT = TSDRegistrySharedT<A, 1U, 1U>;
 
