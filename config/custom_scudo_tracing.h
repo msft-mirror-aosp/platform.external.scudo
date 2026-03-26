@@ -33,6 +33,11 @@
 // Enable tracing on scudo.
 #define SCUDO_SCOPED_TRACE(name) ScopedTrace(name)
 
+// Ensure that the number of entries does not exceed the number of ReleaseToOS
+// values and cause an out of bound crash.
+static_assert(scudo::ReleaseToOS::Last == scudo::ReleaseToOS::ForceFast,
+              "Number of ReleaseToOS entries mismatch");
+
 static inline const char *
 GetReleaseToOSTraceName(scudo::ReleaseToOS ReleaseType) {
   static const char *Names[] = {
