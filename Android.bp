@@ -81,6 +81,9 @@ cc_defaults {
         malloc_low_memory: {
             cflags: ["-DSCUDO_LOW_MEMORY"],
         },
+        malloc_scudo_tsds_max: {
+            cflags: ["-DMALLOC_SCUDO_TSDS_MAX"],
+        },
     },
 }
 
@@ -395,6 +398,9 @@ cc_defaults {
     product_variables: {
         malloc_low_memory: {
             cflags: ["-DSCUDO_LOW_MEMORY_CHECK"],
+        },
+        malloc_scudo_tsds_max: {
+            cflags: ["-DMALLOC_SCUDO_TSDS_MAX"],
         },
     },
 }

@@ -153,7 +153,11 @@ struct AndroidNormalConfig {
   static const bool AbortOnDeallocAlignmentMismatch = false;
 
   template <class A>
+#if defined(MALLOC_SCUDO_TSDS_MAX)
+  using TSDRegistryT = TSDRegistrySharedT<A, 8U, 8U>;
+#else
   using TSDRegistryT = TSDRegistrySharedT<A, 8U, 2U>; // Shared, max 8 TSDs.
+#endif
 
   struct Primary {
     using SizeClassMap = AndroidNormalSizeClassMap;
